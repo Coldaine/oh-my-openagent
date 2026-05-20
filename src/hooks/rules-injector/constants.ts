@@ -20,6 +20,8 @@ export const PROJECT_RULE_SUBDIRS: [string, string][] = [
 
 export const PROJECT_RULE_FILES: string[] = [
   ".github/copilot-instructions.md",
+  "NORTH_STAR.md",
+  "docs/NORTH_STAR.md",
 ];
 
 export const GITHUB_INSTRUCTIONS_PATTERN = /\.instructions\.md$/;

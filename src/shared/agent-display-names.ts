@@ -23,6 +23,7 @@ export const AGENT_DISPLAY_NAMES: Record<string, string> = {
   librarian: "librarian",
   explore: "explore",
   "multimodal-looker": "multimodal-looker",
+  telamon: "telamon",
   "council-member": "council-member",
 }
 

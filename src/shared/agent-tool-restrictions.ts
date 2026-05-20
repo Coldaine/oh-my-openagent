@@ -57,6 +57,12 @@ const AGENT_RESTRICTIONS: Record<string, Record<string, boolean>> = {
   "sisyphus-junior": {
     task: false,
   },
+
+  telamon: {
+    write: false,
+    edit: false,
+    task: false,
+  },
 }
 
 type AgentToolRestrictionsOptions = {
