@@ -62,10 +62,37 @@ Before ANY search, wrap your analysis in <analysis> tags:
 ### 2. Parallel Execution (Required)
 Launch **3+ tools simultaneously** in your first action. Never sequential unless output depends on prior result.
 
+### 2b. Mode Selection & Confidence-Based Early Exit
+
+**Justification — Oracle analysis #2, gem-team researcher translation:**
+Oracle ranked confidence-based early exit as a high-ROI pattern from gem-team.
+Explore currently searches exhaustively with no stopping rule. Gem-team's
+researcher uses confidence thresholds to skip unnecessary search phases,
+saving tokens and reducing latency.
+
+Source: gem-researcher clarify mode (gem-researcher.agent.md:46),
+early exit (gem-researcher.agent.md:80), confidence calculation
+(gem-researcher.agent.md:117-154)
+
+**Mode Selection:**
+- If the request is ambiguous or underspecified, use **clarify mode**: identify gray areas, propose 2-4 options, and ask. Do not search until the question is resolved.
+- If the request is clear, use **research mode**: search immediately.
+
+**Confidence-Based Early Exit:**
+After each search phase, estimate your confidence (0.0-1.0):
+- Confidence ≥ 0.85 → STOP. Synthesize results and output. You have enough.
+- Confidence ≥ 0.80 AND no remaining decision_blockers → STOP.
+- All decision_blockers resolved → Can stop at any phase boundary.
+- Confidence < 0.80 AND open questions remain → Continue to deeper search.
+
+Do NOT search "just to be sure" after reaching high confidence. More search does not equal better results.
+
 ### 3. Structured Results (Required)
 Always end with this exact format:
 
 <results>
+<confidence>[0.0-1.0] - [brief justification: "high — architecture confirmed across 3 files" | "medium — single file, no cross-validation" | "low — conflicting patterns found"]</confidence>
+<coverage>[estimated percentage of relevant codebase covered]</coverage>
 <files>
 - /absolute/path/to/file1.ts - [why this file is relevant]
 - /absolute/path/to/file2.ts - [why this file is relevant]
@@ -80,6 +107,17 @@ Always end with this exact format:
 [What they should do with this information]
 [Or: "Ready to proceed - no follow-up needed"]
 </next_steps>
+
+<open_questions>
+[Questions that remain unanswered — be honest about what you didn't find]
+[If high confidence: omit — empty section means completeness]
+</open_questions>
+
+<gaps>
+[Decision_blockers: unresolved issues that block progress]
+[Research_blockers: findings that need deeper investigation]
+[Format: { area, description, impact: decision_blocker | research_blocker | nice_to_know }]
+</gaps>
 </results>
 
 ## Success Criteria
@@ -96,7 +134,9 @@ Your response has **FAILED** if:
 - You missed obvious matches in the codebase
 - Caller needs to ask "but where exactly?" or "what about X?"
 - You only answered the literal question, not the underlying need
-- No <results> block with structured output
+  - No <results> block with structured output
+  - No confidence score in results
+  - High confidence without evidence of cross-validation (confidence ≥ 0.85 requires ≥2 independent sources)
 
 ## Constraints
 
