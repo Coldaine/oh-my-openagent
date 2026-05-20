@@ -1,5 +1,6 @@
 import type { OhMyOpenCodeConfig, HookName } from "../../config"
 import type { BackgroundManager } from "../../features/background-agent"
+import type { TripleLearningStorage } from "../../features/triple-learning"
 import type { ModelFallbackControllerAccessor } from "../../hooks/model-fallback"
 import type { ModelCacheState } from "../../plugin-state"
 import type { PluginContext } from "../types"
@@ -30,6 +31,7 @@ import {
   createLegacyPluginToastHook,
 } from "../../hooks"
 import { createAnthropicEffortHook } from "../../hooks/anthropic-effort"
+import { createTripleLearningExtractorHook } from "../../hooks/triple-learning-extractor"
 import {
   detectExternalNotificationPlugin,
   getNotificationConflictWarning,
@@ -65,6 +67,7 @@ export type SessionHooks = {
   anthropicEffort: ReturnType<typeof createAnthropicEffortHook> | null
   runtimeFallback: ReturnType<typeof createRuntimeFallbackHook> | null
   legacyPluginToast: ReturnType<typeof createLegacyPluginToastHook> | null
+  tripleLearningExtractor: ReturnType<typeof createTripleLearningExtractorHook> | null
 }
 
 export function createSessionHooks(args: {
@@ -75,8 +78,9 @@ export function createSessionHooks(args: {
   modelFallbackControllerAccessor?: ModelFallbackControllerAccessor
   isHookEnabled: (hookName: HookName) => boolean
   safeHookEnabled: boolean
+  tripleLearningStorage?: TripleLearningStorage | null
 }): SessionHooks {
-  const { ctx, pluginConfig, modelCacheState, backgroundManager, modelFallbackControllerAccessor, isHookEnabled, safeHookEnabled } = args
+  const { ctx, pluginConfig, modelCacheState, backgroundManager, modelFallbackControllerAccessor, isHookEnabled, safeHookEnabled, tripleLearningStorage } = args
   const safeHook = <T>(hookName: HookName, factory: () => T): T | null =>
     safeCreateHook(hookName, factory, { enabled: safeHookEnabled })
 
@@ -276,6 +280,14 @@ export function createSessionHooks(args: {
     ? safeHook("legacy-plugin-toast", () => createLegacyPluginToastHook(ctx))
     : null
 
+  const tripleLearningExtractor = tripleLearningStorage && isHookEnabled("triple-learning-extractor")
+    ? safeHook("triple-learning-extractor", () =>
+        createTripleLearningExtractorHook({
+          storage: tripleLearningStorage,
+          projectDir: ctx.directory,
+        }))
+    : null
+
   return {
     contextWindowMonitor,
     preemptiveCompaction,
@@ -301,5 +313,6 @@ export function createSessionHooks(args: {
     anthropicEffort,
     runtimeFallback,
     legacyPluginToast,
+    tripleLearningExtractor,
   }
 }

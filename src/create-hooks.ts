@@ -1,6 +1,7 @@
 import type { AvailableSkill } from "./agents/dynamic-agent-prompt-builder"
 import type { HookName, OhMyOpenCodeConfig } from "./config"
 import type { LoadedSkill } from "./features/opencode-skill-loader/types"
+import type { TripleLearningStorage } from "./features/triple-learning"
 import type { BackgroundManager } from "./features/background-agent"
 import type { ModelFallbackControllerAccessor } from "./hooks/model-fallback"
 import type { PluginContext } from "./plugin/types"
@@ -42,6 +43,7 @@ export function createHooks(args: {
   safeHookEnabled: boolean
   mergedSkills: LoadedSkill[]
   availableSkills: AvailableSkill[]
+  tripleLearningStorage?: TripleLearningStorage | null
 }) {
   const {
     ctx,
@@ -53,6 +55,7 @@ export function createHooks(args: {
     safeHookEnabled,
     mergedSkills,
     availableSkills,
+    tripleLearningStorage,
   } = args
 
   const core = createCoreHooks({
@@ -63,6 +66,7 @@ export function createHooks(args: {
     modelFallbackControllerAccessor,
     isHookEnabled,
     safeHookEnabled,
+    tripleLearningStorage,
   })
 
   const continuation = createContinuationHooks({

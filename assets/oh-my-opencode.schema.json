@@ -6123,6 +6123,77 @@
       },
       "additionalProperties": false
     },
+    "triple_learning": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "type": "boolean"
+        },
+        "auto_extract_memories": {
+          "default": true,
+          "type": "boolean"
+        },
+        "auto_extract_skills": {
+          "default": true,
+          "type": "boolean"
+        },
+        "auto_confirm_skills_threshold": {
+          "default": "high",
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "conventions_require_confirmation": {
+          "default": true,
+          "type": "boolean"
+        },
+        "max_memories_per_session": {
+          "default": 20,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "max_skills_per_session": {
+          "default": 5,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "memory_context_limit": {
+          "default": 15,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "base_dir": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "enabled",
+        "auto_extract_memories",
+        "auto_extract_skills",
+        "auto_confirm_skills_threshold",
+        "conventions_require_confirmation",
+        "max_memories_per_session",
+        "max_skills_per_session",
+        "memory_context_limit",
+        "base_dir"
+      ],
+      "additionalProperties": false
+    },
     "tmux": {
       "type": "object",
       "properties": {

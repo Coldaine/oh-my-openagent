@@ -156,6 +156,7 @@ export function createToolExecuteAfterHandler(args: {
       await hooks.webfetchRedirectGuard?.["tool.execute.after"]?.(hookInput, output)
       await hooks.fsyncSkipWarning?.["tool.execute.after"]?.(hookInput, output)
       await hooks.jsonErrorRecovery?.["tool.execute.after"]?.(hookInput, output)
+      await hooks.tripleLearningExtractor?.["tool.execute.after"]?.(hookInput, output)
     }
 
     if (input.tool === "extract" || input.tool === "discard") {

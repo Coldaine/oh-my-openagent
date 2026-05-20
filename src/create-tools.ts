@@ -8,6 +8,7 @@ import type { Managers } from "./create-managers"
 import { createAvailableCategories } from "./plugin/available-categories"
 import { createSkillContext } from "./plugin/skill-context"
 import { createToolRegistry } from "./plugin/tool-registry"
+import type { TripleLearningStorage } from "./features/triple-learning"
 
 type CreateToolsResult = {
   filteredTools: ToolsRecord
@@ -22,7 +23,7 @@ type CreateToolsResult = {
 export async function createTools(args: {
   ctx: PluginContext
   pluginConfig: OhMyOpenCodeConfig
-  managers: Pick<Managers, "backgroundManager" | "tmuxSessionManager" | "skillMcpManager" | "modelFallbackControllerAccessor">
+  managers: Pick<Managers, "backgroundManager" | "tmuxSessionManager" | "skillMcpManager" | "modelFallbackControllerAccessor" | "tripleLearningStorage">
 }): Promise<CreateToolsResult> {
   const { ctx, pluginConfig, managers } = args
 
@@ -39,6 +40,7 @@ export async function createTools(args: {
     managers,
     skillContext,
     availableCategories,
+    tripleLearningStorage: managers.tripleLearningStorage ?? undefined,
   })
 
   return {

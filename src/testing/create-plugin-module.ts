@@ -153,6 +153,7 @@ export function createPluginModule(overrides: Partial<PluginModuleDeps> = {}): P
       safeHookEnabled,
       mergedSkills: toolsResult.mergedSkills,
       availableSkills: toolsResult.availableSkills,
+      tripleLearningStorage: managers.tripleLearningStorage ?? undefined,
     })
 
     const pluginInterface = deps.createPluginInterface({

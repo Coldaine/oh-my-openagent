@@ -9,6 +9,7 @@ import { cleanupSessionTeamRuns } from "./features/team-mode/team-runtime/sessio
 import { createModelFallbackControllerAccessor } from "./hooks/model-fallback"
 import { initTaskToastManager } from "./features/task-toast-manager"
 import { TmuxSessionManager } from "./features/tmux-subagent"
+import { createTripleLearningStorage, type TripleLearningStorage } from "./features/triple-learning"
 import * as openclawRuntimeDispatch from "./openclaw/runtime-dispatch"
 import { registerManagerForCleanup } from "./features/background-agent/process-cleanup"
 import { createConfigHandler } from "./plugin-handlers"
@@ -44,6 +45,7 @@ export type Managers = {
   skillMcpManager: SkillMcpManager
   configHandler: ReturnType<typeof createConfigHandler>
   modelFallbackControllerAccessor: ModelFallbackControllerAccessor
+  tripleLearningStorage: TripleLearningStorage | null
 }
 
 export function createManagers(args: {
@@ -152,11 +154,23 @@ export function createManagers(args: {
     pluginConfig,
     modelCacheState,
   })
+
+  const tripleLearningConfig = pluginConfig.triple_learning
+  const tripleLearningStorage = tripleLearningConfig?.enabled
+    ? createTripleLearningStorage(tripleLearningConfig, ctx.directory)
+    : null
+
+  if (tripleLearningStorage) {
+    tripleLearningStorage.ensureDirs()
+    log("[create-managers] Triple Learning System initialized")
+  }
+
   return {
     tmuxSessionManager,
     backgroundManager,
     skillMcpManager,
     configHandler,
     modelFallbackControllerAccessor,
+    tripleLearningStorage,
   }
 }

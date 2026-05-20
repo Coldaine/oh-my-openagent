@@ -240,6 +240,15 @@ export function createMessagesTransformHandler(args: {
       output,
     )
 
+    await runMessagesTransformHookSafely(
+      "tripleLearningInjector",
+      args.hooks.tripleLearningInjector?.[
+        "experimental.chat.messages.transform"
+      ],
+      input,
+      output,
+    )
+
     ensureUserTurnAfterAssistantTail(output)
   }
 }

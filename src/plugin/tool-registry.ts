@@ -46,6 +46,14 @@ import { getMainSessionID } from "../features/claude-code-session-state"
 import { filterDisabledTools } from "../shared/disabled-tools"
 import { isTaskSystemEnabled, log } from "../shared"
 
+import type { TripleLearningStorage } from "../features/triple-learning"
+import {
+  createTripleLearnSearchTool,
+  createTripleLearnListTool,
+  createTripleLearnStatsTool,
+  createTripleLearnForgetTool,
+} from "../tools/triple-learning"
+
 import type { Managers } from "../create-managers"
 import type { SkillContext } from "./skill-context"
 import { normalizeToolArgSchemas } from "./normalize-tool-arg-schemas"
@@ -182,6 +190,7 @@ export function createToolRegistry(args: {
   availableCategories: AvailableCategory[]
   interactiveBashEnabled?: boolean
   toolFactories?: Partial<ToolRegistryFactories>
+  tripleLearningStorage?: TripleLearningStorage
 }): ToolRegistryResult {
   const {
     ctx,
@@ -191,6 +200,7 @@ export function createToolRegistry(args: {
     availableCategories,
     interactiveBashEnabled = isInteractiveBashEnabled(),
     toolFactories,
+    tripleLearningStorage,
   } = args
   const factories: ToolRegistryFactories = {
     ...defaultToolRegistryFactories,
@@ -300,6 +310,15 @@ export function createToolRegistry(args: {
     ? { edit: factories.createHashlineEditTool(ctx) }
     : {}
 
+  const tripleLearningToolsRecord: Record<string, ToolDefinition> = tripleLearningStorage
+    ? {
+        learn_search: createTripleLearnSearchTool(tripleLearningStorage),
+        learn_list: createTripleLearnListTool(tripleLearningStorage),
+        learn_stats: createTripleLearnStatsTool(tripleLearningStorage),
+        learn_forget: createTripleLearnForgetTool(tripleLearningStorage),
+      }
+    : {}
+
   const teamModeToolsRecord: Record<string, ToolDefinition> = pluginConfig.team_mode?.enabled
     ? {
         team_create: factories.createTeamCreateTool(
@@ -346,6 +365,7 @@ export function createToolRegistry(args: {
     ...teamModeToolsRecord,
     ...taskToolsRecord,
     ...hashlineToolsRecord,
+    ...tripleLearningToolsRecord,
   }
 
   const allToolNames = Object.keys(allTools)
