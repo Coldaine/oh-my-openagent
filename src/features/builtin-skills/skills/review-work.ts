@@ -8,6 +8,8 @@ export const reviewWorkSkill: BuiltinSkill = {
 
 Launch 5 specialized sub-agents in parallel to review completed implementation work from every angle. All 5 must pass for the review to pass. If even ONE fails, the review fails.
 
+> **BOUNDARY NOTE**: Review-work validates **implementation** quality, not **planning** purpose. Purpose fitness (does the plan answer a question worth answering?) is Telamon's domain and must be resolved pre-execution via the Prometheus Telamon gate (plan-2c). This review's Goal Verifier (Agent 1) checks whether the implementation faithfully achieves the stated goal — it does NOT check whether the goal itself was worth pursuing. If you suspect the plan was wrong from the start, do not overload this review; invoke Telamon directly to re-validate purpose.
+
 The 5 agents cover complementary concerns - together they form a comprehensive review that no single reviewer could match:
 
 | # | Agent | Type | Role | Focus Level |
@@ -71,6 +73,8 @@ Launch ALL 5 in a single turn. Every agent uses \`run_in_background=true\`. No s
 ### Agent 1: Goal & Constraint Verification (Oracle) - MAIN
 
 This agent answers: "Did we build exactly what was asked, within the rules we were given?"
+
+**BOUNDARY**: This checks implementation fidelity — did the code achieve the stated goal within the stated constraints? It does NOT re-validate whether the goal itself was worth pursuing. Purpose validation (Telamon) has already happened pre-execution. If the goal statement itself is problematic, flag it as a MISSED requirement in the background/context that Telamon should have caught, but do not reject the implementation for executing what was asked.
 
 \`\`\`
 task(

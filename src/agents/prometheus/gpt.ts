@@ -195,6 +195,7 @@ TodoWrite([
   { id: "plan-1b", content: "Oracle verification: phase 1 (interview completeness, scope, test strategy)", status: "pending", priority: "high" },
   { id: "plan-2", content: "Generate plan to .omo/plans/{name}.md", status: "pending", priority: "high" },
   { id: "plan-2b", content: "Oracle verification: phase 2 (plan compliance, parallelism, acceptance criteria)", status: "pending", priority: "high" },
+  { id: "plan-2c", content: "Telamon purpose-fitness gate: verify plan produces insight, not measurement", status: "pending", priority: "high" },
   { id: "plan-3", content: "Self-review: classify gaps (critical/minor/ambiguous)", status: "pending", priority: "high" },
   { id: "plan-4", content: "Present summary with decisions needed", status: "pending", priority: "high" },
   { id: "plan-5", content: "Ask about high accuracy mode (Momus review)", status: "pending", priority: "high" },
@@ -204,6 +205,8 @@ TodoWrite([
 \`\`\`
 
 Oracle verification gates (plan-1b, plan-2b, plan-5b) are blocking. Each is a single \`task(subagent_type="oracle", load_skills=[], run_in_background=false, prompt="...")\` invocation that must return \`VERDICT: GO\` before the workflow continues. \`NO-GO\` is a directive to fix the cited issues and rerun on the same Oracle session via \`task_id\`, not a license to skip.
+
+**Telamon purpose-fitness gate (plan-2c):** After Oracle phase-2 passes, BEFORE self-review, run Telamon to validate the plan produces insight, not measurement. Invoke: \`task(subagent_type="telamon", load_skills=[], run_in_background=false, prompt=".omo/plans/{name}.md")\`. Provide ONLY the file path as prompt. Telamon must return \`[OKAY]\` before continuing. If \`[ITERATE]\`, read the "Missing Question" and "What Changes" guidance, restructure the plan, and resubmit. Loop until OKAY. Telamon catches plans that describe rather than explain — do not skip this gate even for self-evidently analytical plans.
 
 ### Step 2: Consult Metis (MANDATORY)
 
@@ -402,6 +405,7 @@ Wave 2: [dependent tasks with categories]
 
 ## Final Verification Wave (MANDATORY \u2014 after ALL implementation tasks)
 > 4 review agents run in PARALLEL. ALL must APPROVE. Present consolidated results to user and get explicit "okay" before completing.
+> **BOUNDARY NOTE**: These agents verify implementation quality, not planning purpose. Purpose fitness (is this plan worth executing?) is Telamon's domain (resolved pre-execution via plan-2c). These agents do NOT re-validate purpose \u2014 they validate execution fidelity.
 > **Do NOT auto-proceed after verification. Wait for user's explicit approval before marking work complete.**
 > **Never mark F1-F4 as checked before getting user's okay.** Rejection or user feedback -> fix -> re-run -> present again -> wait for okay.
 - [ ] F1. Plan Compliance Audit \u2014 oracle

@@ -208,6 +208,7 @@ TodoWrite([
   { id: "plan-1b", content: "Oracle verification: phase 1 (interview completeness, scope, test strategy)", status: "pending", priority: "high" },
   { id: "plan-2", content: "Generate plan to .omo/plans/{name}.md", status: "pending", priority: "high" },
   { id: "plan-2b", content: "Oracle verification: phase 2 (plan compliance, parallelism, acceptance criteria)", status: "pending", priority: "high" },
+  { id: "plan-2c", content: "Telamon purpose-fitness gate: verify plan produces insight, not measurement", status: "pending", priority: "high" },
   { id: "plan-3", content: "Self-review: classify gaps", status: "pending", priority: "high" },
   { id: "plan-4", content: "Present summary with decisions needed", status: "pending", priority: "high" },
   { id: "plan-5", content: "Ask about high accuracy mode (Momus)", status: "pending", priority: "high" },
@@ -217,6 +218,8 @@ TodoWrite([
 \`\`\`
 
 Oracle verification gates (plan-1b, plan-2b, plan-5b) are blocking. Each is a single \`task(subagent_type="oracle", load_skills=[], run_in_background=false, prompt="...")\` invocation that must return \`VERDICT: GO\` before the workflow continues. \`NO-GO\` is a directive to fix the cited issues and rerun on the same Oracle session via \`task_id\`, not a license to skip.
+
+**Telamon purpose-fitness gate (plan-2c):** After Oracle phase-2 passes, BEFORE self-review, run Telamon. Invoke: \`task(subagent_type="telamon", load_skills=[], run_in_background=false, prompt=".omo/plans/{name}.md")\`. Provide ONLY the file path. Telamon must return \`[OKAY]\` before continuing. If \`[ITERATE]\`, read the missing question, restructure the plan, resubmit. Loop until OKAY. Plans that collect, categorize, or score without asking a causal question are measurement, not insight — do not let them proceed.
 
 ### Step 2: Consult Metis (MANDATORY)
 
