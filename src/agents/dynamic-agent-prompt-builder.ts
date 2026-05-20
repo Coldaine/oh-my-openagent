@@ -28,4 +28,5 @@ export {
   buildToolCallFormatSection,
   buildUltraworkSection,
   buildAntiDuplicationSection,
+  buildKnowledgeTrustSection,
 } from "./dynamic-agent-policy-sections"

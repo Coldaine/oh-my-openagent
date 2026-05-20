@@ -19,6 +19,7 @@ import {
   buildOracleSection,
   buildHardBlocksSection,
   buildAntiPatternsSection,
+  buildKnowledgeTrustSection,
   buildParallelDelegationSection,
   buildNonClaudePlannerSection,
   buildAntiDuplicationSection,
@@ -159,6 +160,7 @@ export function buildDefaultSisyphusPrompt(
   const oracleSection = buildOracleSection(availableAgents);
   const hardBlocks = buildHardBlocksSection();
   const antiPatterns = buildAntiPatternsSection();
+  const knowledgeTrust = buildKnowledgeTrustSection();
   const parallelDelegationSection = buildParallelDelegationSection(model, availableCategories);
   const nonClaudePlannerSection = buildNonClaudePlannerSection(model);
   const taskManagementSection = buildTaskManagementSection(useTaskSystem);
@@ -530,6 +532,8 @@ If the user's approach seems problematic:
 
 <Constraints>
 ${hardBlocks}
+
+${knowledgeTrust}
 
 ${antiPatterns}
 
