@@ -30,6 +30,8 @@ export type ModelResolutionRequest = {
     userModel?: string
     userFallbackModels?: string[]
     categoryDefaultModel?: string
+    rotationModel?: string
+    rotationAgentKey?: string
   }
   constraints: {
     availableModels: Set<string>
@@ -43,6 +45,7 @@ export type ModelResolutionRequest = {
 
 export type ModelResolutionProvenance =
   | "override"
+  | "rotation"
   | "category-default"
   | "provider-fallback"
   | "system-default"
@@ -75,6 +78,15 @@ export function resolveModelPipeline(
   if (normalizedUserModel) {
     log("Model resolved via config override", { model: normalizedUserModel })
     return { model: normalizedUserModel, provenance: "override" }
+  }
+
+  const normalizedRotationModel = normalizeModel(intent?.rotationModel)
+  if (normalizedRotationModel && !intent?.userModel) {
+    log("Model resolved via rotation", {
+      model: normalizedRotationModel,
+      agentKey: intent?.rotationAgentKey,
+    })
+    return { model: normalizedRotationModel, provenance: "rotation" }
   }
 
   const normalizedCategoryDefault = normalizeModel(intent?.categoryDefaultModel)
