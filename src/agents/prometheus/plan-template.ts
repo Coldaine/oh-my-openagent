@@ -68,6 +68,35 @@ Generate plan to: \`.omo/plans/{name}.md\`
 
 ---
 
+## Pre-Mortem Risk Analysis (MANDATORY for Medium+ effort)
+
+> **Justification — Oracle analysis #1, gem-team translation:**
+> Oracle identified that OMO plans lack pre-execution risk analysis. Gem-team's
+> planner requires pre-mortem for all medium+ complexity tasks, identifying
+> failure modes BEFORE execution. This prevents costly debugging loops.
+> 
+> Oracle: 'Prometheus plan quality requires pre-mortem, contracts, and sizing
+> caps to prevent plans that look executable but contain hidden failure modes.'
+
+### Overall Risk Assessment
+- **Risk Level**: [Low | Medium | High]
+- **Reasoning**: [1-2 sentences on why]
+
+### Critical Failure Modes
+> For each: what could go wrong, how likely, what's the impact, and how we prevent it.
+
+| Scenario | Likelihood | Impact | Mitigation |
+|----------|-----------|--------|------------|
+| [What could fail] | Low/Med/High | Low/Med/High/Critical | [How we prevent or recover] |
+
+### Key Assumptions
+> Explicitly state assumptions that, if wrong, would invalidate parts of the plan.
+
+- [Assumption 1]: [Why we believe this]
+- [Assumption 2]: [If wrong, the plan needs replanning for Tasks X, Y]
+
+---
+
 ## Verification Strategy (MANDATORY)
 
 > **ZERO HUMAN INTERVENTION** - ALL verification is agent-executed. No exceptions.
@@ -148,6 +177,24 @@ Max Concurrent: 7 (Waves 1 & 2)
 
 > This is abbreviated for reference. YOUR generated plan must include the FULL matrix for ALL tasks.
 
+### Task Contracts (MANDATORY)
+
+> **Justification — Oracle #1, gem-team planner translation:**
+> Contracts prevent the #1 multi-agent failure mode: Task B assuming what Task A
+> produced. Gem-team's planner defines explicit interfaces between dependent tasks.
+> Without contracts, agents re-research or build against assumptions.
+
+For each task dependency, define what the producer MUST deliver:
+
+| From Task | To Task | Interface | Format |
+|-----------|---------|-----------|--------|
+| [Task producing output] | [Task consuming output] | [What must be delivered] | [File/structure/API shape] |
+
+**Contract rules:**
+- Every task that is blocked by another task must have a contract with its blocker
+- A contract is INVALID if it says 'Task A completes' — it must name the specific artifact
+- Contract verification happens during wave integration checks
+
 ### Agent Dispatch Summary
 
 - **1**: **7** - T1-T4 → \`quick\`, T5 → \`quick\`, T6 → \`quick\`, T7 → \`quick\`
@@ -173,15 +220,30 @@ Max Concurrent: 7 (Waves 1 & 2)
   **Must NOT do**:
   - [Specific exclusions from guardrails]
 
-  **Recommended Agent Profile**:
-  > Select category + skills based on task domain. Justify each choice.
-  - **Category**: \`[visual-engineering | ultrabrain | artistry | quick | unspecified-low | unspecified-high | writing]\`
-    - Reason: [Why this category fits the task domain]
-  - **Skills**: [\`skill-1\`, \`skill-2\`]
-    - \`skill-1\`: [Why needed - domain overlap explanation]
-    - \`skill-2\`: [Why needed - domain overlap explanation]
-  - **Skills Evaluated but Omitted**:
-    - \`omitted-skill\`: [Why domain doesn't overlap]
+   **Recommended Agent Profile**:
+   > Select category + skills based on task domain. Justify each choice.
+   - **Category**: \`[visual-engineering | ultrabrain | artistry | quick | unspecified-low | unspecified-high | writing]\`
+     - Reason: [Why this category fits the task domain]
+   - **Skills**: [\`skill-1\`, \`skill-2\`]
+     - \`skill-1\`: [Why needed - domain overlap explanation]
+     - \`skill-2\`: [Why needed - domain overlap explanation]
+   - **Skills Evaluated but Omitted**:
+     - \`omitted-skill\`: [Why domain doesn't overlap]
+
+   **Sizing Limits** (MANDATORY — Oracle #1, gem-team translation):
+   > Oracle identified that OMO plans lack sizing constraints. Gem-team caps
+   > tasks at ≤3 files and ≤300 lines. Tasks exceeding these limits indicate
+   > under-decomposition and should be split.
+   - **Estimated Files**: [≤ 3]
+   - **Estimated Lines**: [≤ 300]
+   - **If over limit**: Split into subtasks or justify why monolithic is necessary
+
+   **Failure Modes** (REQUIRED for Medium+ priority tasks):
+   > Gem-team's planner requires failure modes per task, not just per plan.
+   - **Scenario**: [What could go wrong during THIS task]
+   - **Likelihood**: [Low | Medium | High]
+   - **Impact**: [Low | Medium | High]
+   - **Mitigation**: [How we prevent or recover]
 
   **Parallelization**:
   - **Can Run In Parallel**: YES | NO
