@@ -1,5 +1,6 @@
 import type { HookName, OhMyOpenCodeConfig } from "../../config"
 import type { BackgroundManager } from "../../features/background-agent"
+import type { TripleLearningStorage } from "../../features/triple-learning"
 import type { ModelFallbackControllerAccessor } from "../../hooks/model-fallback"
 import type { PluginContext } from "../types"
 import type { ModelCacheState } from "../../plugin-state"
@@ -16,8 +17,9 @@ export function createCoreHooks(args: {
   modelFallbackControllerAccessor?: ModelFallbackControllerAccessor
   isHookEnabled: (hookName: HookName) => boolean
   safeHookEnabled: boolean
+  tripleLearningStorage?: TripleLearningStorage | null
 }) {
-  const { ctx, pluginConfig, modelCacheState, backgroundManager, modelFallbackControllerAccessor, isHookEnabled, safeHookEnabled } = args
+  const { ctx, pluginConfig, modelCacheState, backgroundManager, modelFallbackControllerAccessor, isHookEnabled, safeHookEnabled, tripleLearningStorage } = args
 
   const session = createSessionHooks({
     ctx,
@@ -27,6 +29,7 @@ export function createCoreHooks(args: {
     modelFallbackControllerAccessor,
     isHookEnabled,
     safeHookEnabled,
+    tripleLearningStorage,
   })
 
   const tool = createToolGuardHooks({
@@ -43,6 +46,7 @@ export function createCoreHooks(args: {
     isHookEnabled: (name) => isHookEnabled(name as HookName),
     safeHookEnabled,
     ralphLoop: session.ralphLoop,
+    tripleLearningStorage,
   })
 
   return {

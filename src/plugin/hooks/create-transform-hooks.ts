@@ -1,4 +1,5 @@
 import type { OhMyOpenCodeConfig } from "../../config"
+import type { TripleLearningStorage } from "../../features/triple-learning"
 import type { PluginContext } from "../types"
 import type { RalphLoopHook } from "../../hooks/ralph-loop"
 
@@ -14,6 +15,7 @@ import {
   contextCollector,
   createContextInjectorMessagesTransformHook,
 } from "../../features/context-injector"
+import { createTripleLearningInjectorHook } from "../../hooks/triple-learning-injector"
 import { safeCreateHook } from "../../shared/safe-create-hook"
 
 export type TransformHooks = {
@@ -24,16 +26,18 @@ export type TransformHooks = {
   teamMailboxInjector: ReturnType<typeof createTeamMailboxInjector> | null
   thinkingBlockValidator: ReturnType<typeof createThinkingBlockValidatorHook> | null
   toolPairValidator: ReturnType<typeof createToolPairValidatorHook> | null
+  tripleLearningInjector: ReturnType<typeof createTripleLearningInjectorHook> | null
 }
 
 export function createTransformHooks(args: {
   ctx: PluginContext
   pluginConfig: OhMyOpenCodeConfig
-  isHookEnabled: (hookName: string) => boolean
+  isHookEnabled: (name: string) => boolean
   safeHookEnabled?: boolean
   ralphLoop?: RalphLoopHook | null
+  tripleLearningStorage?: TripleLearningStorage | null
 }): TransformHooks {
-  const { ctx, pluginConfig, isHookEnabled, ralphLoop } = args
+  const { ctx, pluginConfig, isHookEnabled, ralphLoop, tripleLearningStorage } = args
   const safeHookEnabled = args.safeHookEnabled ?? true
 
   const claudeCodeHooks = isHookEnabled("claude-code-hooks")
@@ -103,6 +107,14 @@ export function createTransformHooks(args: {
       )
     : null
 
+  const tripleLearningInjector = tripleLearningStorage && isHookEnabled("triple-learning-injector")
+    ? safeCreateHook(
+        "triple-learning-injector",
+        () => createTripleLearningInjectorHook({ storage: tripleLearningStorage }),
+        { enabled: safeHookEnabled },
+      )
+    : null
+
   return {
     claudeCodeHooks,
     keywordDetector,
@@ -111,5 +123,6 @@ export function createTransformHooks(args: {
     teamMailboxInjector,
     thinkingBlockValidator,
     toolPairValidator,
+    tripleLearningInjector,
   }
 }

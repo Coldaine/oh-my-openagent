@@ -24,6 +24,7 @@ import { SisyphusConfigSchema } from "./sisyphus"
 import { SisyphusAgentConfigSchema } from "./sisyphus-agent"
 import { TmuxConfigSchema } from "./tmux"
 import { StartWorkConfigSchema } from "./start-work"
+import { TripleLearningConfigSchema } from "./triple-learning"
 import { WebsearchConfigSchema } from "./websearch"
 
 export const OhMyOpenCodeConfigSchema = z.object({
@@ -78,6 +79,7 @@ export const OhMyOpenCodeConfigSchema = z.object({
   }),
   browser_automation_engine: BrowserAutomationConfigSchema.optional(),
   websearch: WebsearchConfigSchema.optional(),
+  triple_learning: TripleLearningConfigSchema.optional(),
   tmux: TmuxConfigSchema.optional(),
   sisyphus: SisyphusConfigSchema.optional(),
   start_work: StartWorkConfigSchema.optional(),

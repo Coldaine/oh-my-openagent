@@ -1,0 +1,13 @@
+export const TRIPLE_LEARNING_DIR = ".omo"
+export const MEMORIES_DIR = "memories"
+export const MEMORIES_BASE_PATH = `${TRIPLE_LEARNING_DIR}/${MEMORIES_DIR}`
+export const SKILLS_DIR = "skills"
+export const SKILLS_BASE_PATH = `${TRIPLE_LEARNING_DIR}/${SKILLS_DIR}`
+export const CONVENTIONS_DIR = "conventions"
+export const CONVENTIONS_BASE_PATH = `${TRIPLE_LEARNING_DIR}/${CONVENTIONS_DIR}`
+export const MEMORIES_INDEX_FILE = "index.json"
+export const MEMORY_LINE_PREFIX = "ML#"
+export const MAX_MEMORIES_PER_SESSION_DEFAULT = 20
+export const MAX_SKILLS_PER_SESSION_DEFAULT = 5
+export const MEMORY_CONTEXT_LIMIT_DEFAULT = 15
+export const PENDING_APPROVALS_FILE = "pending-approvals.json"
