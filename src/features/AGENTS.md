@@ -54,7 +54,7 @@ Parallel multi-agent coordination, OFF by default. Subdirs:
 - `team-layout-tmux/` — optional tmux pane visualization
 - `tools/` — 12 `team_*` tool implementations
 
-Eligible members: sisyphus, atlas, sisyphus-junior, hephaestus only. See [`team-mode/AGENTS.md`](file:///Users/yeongyu/local-workspaces/omo/src/features/team-mode/AGENTS.md).
+Eligible members: sisyphus, atlas, sisyphus-junior, hephaestus only. See [`team-mode/AGENTS.md`](src/features/team-mode/AGENTS.md).
 
 ### opencode-skill-loader (~3.2k LOC)
 
