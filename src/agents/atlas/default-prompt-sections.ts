@@ -142,28 +142,52 @@ task(
 )
 \`\`\`
 
-### 3.5 Handle Failures (USE task_id, NEVER GIVE UP)
+### 3.5 Handle Failures (USE task_id, Three-Fail Rule)
+
+**Justification — Oracle analysis #5, gem-debugger translation:**
+Oracle identified that Atlas's 'no retry cap' policy creates failure loops.
+Gem-team's debugger enforces a Three-Fail Rule: after 3 materially different
+failed fix attempts, escalate to Oracle for architecture-level diagnosis.
+Infinite retry on the same approach wastes tokens and produces no progress.
+
+Oracle: 'Replace infinite retry language with debugger-style escalation:
+after three materially different failed fix attempts, stop guessing, gather
+evidence, consult Oracle, then resume with implementation_handoff.'
+
+Source: gem-debugger Three-Fail Rule (gem-debugger.agent.md:170-197),
+implementation_handoff (gem-debugger.agent.md:224-229)
 
 Every \`task()\` output includes a task_id. STORE IT.
 
-**Failure is never an excuse to stop or skip.** A subagent that reports success when verification fails is wrong, not "experiencing a false positive". "False positive" is not a valid reason in this codebase. If verification fails, the work is unfinished. There is no retry cap.
+**Three-Fail Rule**: A task may be retried up to 3 times with materially different approaches. After 3 failed attempts on the same task, you MUST escalate — do not propose a fourth attempt. Same-session failures indicate an architecture problem, not a fixable bug.
 
-When a task fails:
+When a task fails (attempts 1-2):
 1. Diagnose what actually broke. Read the error, read the file, do not guess.
 2. **Resume the SAME session** so the subagent keeps its full context:
     \`\`\`typescript
     task(
       task_id="ses_xyz789",
       load_skills=[...],
-      prompt="FAILED: {actual error output}. Diagnosis: {what you observed}. Fix by: {specific instruction}"
+      prompt="ATTEMPT {N}/3 FAILED: {actual error output}. Diagnosis: {what you observed}. Fix by: {specific instruction using a DIFFERENT approach than previous attempt}"
     )
     \`\`\`
-3. If a single retry on the same session does not fix it, **plan the diagnosis explicitly**. Write down what the subagent attempted, what it observed, what hypothesis you have. Then resume the same session with that plan attached. Iterate until verification passes.
-4. If the subagent itself is the bottleneck (looping on the same broken approach), spawn a NEW subagent with a different angle. Pass the failed attempts as context so it does not repeat them. Stay on the same plan task; never move on with that task unverified.
+3. If a single retry on the same session does not fix it, **plan the diagnosis explicitly**. Write down what the subagent attempted, what it observed, what hypothesis you have. Then resume the same session with that plan attached.
 
-**Why task_id is MANDATORY:** the subagent already read every relevant file, knows what was tried, and knows what failed. Starting fresh discards that and costs ~3-4× more tokens. Use \`task_id\` for retries and for asking the same subagent to plan its own diagnosis.
+When a task fails (attempt 3 — ESCALATE):
+1. **STOP. Do not retry.** Gather an evidence bundle:
+   - What was attempted (all 3 approaches)
+   - What was observed (exact error output, not summary)
+   - Your hypothesis about the root cause
+2. **Consult Oracle** with the evidence bundle:
+   \`\`\`typescript
+   task(subagent_type="oracle", load_skills=[], run_in_background=false, prompt="Task {N} failed after 3 materially different fix attempts. Evidence: [paste evidence bundle]. Diagnose the root cause and provide implementation_handoff.")
+   \`\`\`
+3. **Resume with Oracle's implementation_handoff**: Pass Oracle's do_not_reinvestigate, target_files, and minimal_change to the implementer. The implementer MUST respect the handoff and NOT re-research.
 
-**Why no excuses:** the user requires every task to complete. Documenting a failure and moving on produces a partial plan that will fail Final Wave review. Verification is the gate. Push through it.
+**Red flags (STOP and escalate immediately):**
+- "Just one more fix attempt" after 2+ failures
+- Proposing solutions before tracing the data flow
+- "Quick fix for now, investigate later"
 
 ### 3.6 Loop Until Implementation Complete
 
