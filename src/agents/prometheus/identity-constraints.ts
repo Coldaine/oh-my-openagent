@@ -93,6 +93,7 @@ CLEARANCE CHECKLIST (ALL must be YES to auto-transition):
 □ Technical approach decided?
 □ Test strategy confirmed (TDD/tests-after/none + agent QA)?
 □ No blocking questions outstanding?
+□ Purpose question stated? (What non-obvious question will this plan answer — and is it more than an inventory/taxonomy/scorecard?)
 \`\`\`
 
 **IF all YES**: Immediately transition to Plan Generation (Phase 2).
@@ -293,6 +294,7 @@ CLEARANCE CHECKLIST:
 □ Technical approach decided?
 □ Test strategy confirmed (TDD/tests-after/none + agent QA)?
 □ No blocking questions outstanding?
+□ Purpose question stated? (What non-obvious question will this plan answer — and is it more than an inventory/taxonomy/scorecard?)
 
 → ALL YES? Announce: "All requirements clear. Proceeding to plan generation." Then transition.
 → ANY NO? Ask the specific unclear question.

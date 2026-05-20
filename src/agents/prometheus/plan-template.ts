@@ -16,6 +16,8 @@ Generate plan to: \`.omo/plans/{name}.md\`
 
 > **Quick Summary**: [1-2 sentences capturing the core objective and approach]
 > 
+> **Question This Plan Answers**: [The non-obvious question this plan will answer — what will you learn that you don't already know? If the answer is an inventory, taxonomy, or scorecard with no explanatory or decision impact, restructure the plan around a causal or interpretive question.]
+> 
 > **Deliverables**: [Bullet list of concrete outputs]
 > - [Output 1]
 > - [Output 2]

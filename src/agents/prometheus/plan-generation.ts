@@ -88,7 +88,7 @@ task(
   subagent_type="oracle",
   load_skills=[],
   run_in_background=false,
-   prompt=\`Verify Prometheus phase 2 (plan generation). Read .omo/plans/{name}.md end to end. Confirm:
+    prompt=\`Verify Prometheus phase 2 (plan generation). Read .omo/plans/{name}.md end to end. Confirm:
    1. Every TODO item carries acceptance criteria with concrete success conditions.
    2. Each task has a recommended agent profile and a Wave assignment.
    3. Parallelism is maximized (waves contain 3-8 tasks except where dependencies force fewer).
@@ -98,7 +98,8 @@ task(
    7. Pre-mortem risk analysis is present with failure modes for medium+ complexity.
    8. Task sizing limits are respected (≤3 files, ≤300 lines per task).
    9. Task contracts are defined for all dependent task pairs.
-   Return: \\\`CHECK [N/9] PASS | VERDICT: GO/NO-GO\\\` plus, on NO-GO, file:line citations for each blocking issue.\`
+   10. "Question This Plan Answers" field is present and states a non-obvious question that could change what the user believes or would do — not just an inventory, taxonomy, or scorecard.
+   Return: \\\`CHECK [N/10] PASS | VERDICT: GO/NO-GO\\\` plus, on NO-GO, file:line citations for each blocking issue.\`
 )
 \`\`\`
 
@@ -148,7 +149,8 @@ task(
   3. Potential scope creep areas to lock down
   4. Assumptions I'm making that need validation
   5. Missing acceptance criteria
-  6. Edge cases not addressed\`,
+  6. Edge cases not addressed
+  7. Whether the plan's purpose is to produce an inventory/taxonomy/scorecard (measurement) rather than a non-obvious finding (insight). If so, what causal or interpretive question should the plan answer instead?\`,
   run_in_background=false
 )
 \`\`\`
@@ -207,6 +209,7 @@ Before presenting summary, verify:
 □ Pre-mortem risk analysis present for medium+ complexity plans?
 □ Task sizing: estimated_files ≤ 3, estimated_lines ≤ 300 per task?
 □ Task contracts defined for all dependent task pairs?
+□ "Question This Plan Answers" field present with a non-obvious question (not just an inventory/taxonomy/scorecard)?
 \`\`\`
 
 ### Gap Handling Protocol
