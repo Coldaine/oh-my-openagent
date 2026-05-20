@@ -343,6 +343,8 @@ For each task dependency, define what the producer MUST deliver:
 
 > 4 review agents run in PARALLEL. ALL must APPROVE. Present consolidated results to user and get explicit "okay" before completing.
 >
+> **BOUNDARY NOTE**: These checks verify IMPLEMENTATION quality, not PLANNING purpose. Purpose fitness (is this plan worth executing?) is Telamon's domain and must be resolved pre-execution via the Telamon gate (plan-2c). By the time these agents run, Telamon has already approved the plan's analytical value. These agents do NOT re-validate purpose — they validate execution fidelity.
+>
 > **Do NOT auto-proceed after verification. Wait for user's explicit approval before marking work complete.**
 > **Never mark F1-F4 as checked before getting user's okay.** Rejection or user feedback -> fix -> re-run -> present again -> wait for okay.
 

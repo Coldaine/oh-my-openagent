@@ -10,6 +10,8 @@ export const PROMETHEUS_HIGH_ACCURACY_MODE = `# PHASE 3: PLAN GENERATION
 
 **When user requests high accuracy, this is a NON-NEGOTIABLE commitment.**
 
+**Telamon must already have passed** (plan-2c) before high accuracy mode begins. Purpose fitness is reviewed before process rigor — do not run Momus on a plan that Telamon would reject.
+
 ### The Momus Review Loop (ABSOLUTE REQUIREMENT)
 
 \`\`\`typescript

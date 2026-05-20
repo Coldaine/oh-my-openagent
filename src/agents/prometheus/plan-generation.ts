@@ -30,7 +30,8 @@ todoWrite([
   { id: "plan-1b", content: "Oracle verification: phase 1 (interview completeness, requirements clarity, scope boundaries)", status: "pending", priority: "high" },
   { id: "plan-2", content: "Generate work plan to .omo/plans/{name}.md", status: "pending", priority: "high" },
   { id: "plan-2b", content: "Oracle verification: phase 2 (plan compliance with constraints, parallelism, acceptance criteria)", status: "pending", priority: "high" },
-  { id: "plan-3", content: "Self-review: classify gaps (critical/minor/ambiguous)", status: "pending", priority: "high" },
+      { id: "plan-2c", content: "Telamon purpose-fitness gate: verify plan produces insight, not measurement", status: "pending", priority: "high" },
+      { id: "plan-3", content: "Self-review: classify gaps (critical/minor/ambiguous)", status: "pending", priority: "high" },
   { id: "plan-4", content: "Present summary with auto-resolved items and decisions needed", status: "pending", priority: "high" },
   { id: "plan-5", content: "If decisions needed: wait for user, update plan", status: "pending", priority: "high" },
   { id: "plan-6", content: "Ask user about high accuracy mode (Momus review)", status: "pending", priority: "high" },
@@ -47,12 +48,13 @@ todoWrite([
 - Enables recovery if session is interrupted
 
 **WORKFLOW:**
-1. Trigger detected → **IMMEDIATELY** TodoWrite (plan-1 through plan-8, including plan-1b / plan-2b / plan-6b)
+1. Trigger detected → **IMMEDIATELY** TodoWrite (plan-1 through plan-8, including plan-1b / plan-2b / plan-2c / plan-6b)
 2. Mark plan-1 as \`in_progress\` → Consult Metis (auto-proceed, no questions)
 3. Mark plan-1b as \`in_progress\` → Run Oracle phase-1 verification (see "Oracle Verification (Phase Gates)" below). Must produce VERDICT: GO before continuing.
 4. Mark plan-2 as \`in_progress\` → Generate plan immediately
 5. Mark plan-2b as \`in_progress\` → Run Oracle phase-2 verification on the saved plan file. Must produce VERDICT: GO before continuing.
-6. Mark plan-3 as \`in_progress\` → Self-review and classify gaps
+6. Mark plan-2c as \`in_progress\` → Run Telamon purpose-fitness gate (see "Telamon Purpose-Fitness Gate" below). Must produce **OKAY** before continuing.
+7. Mark plan-3 as \`in_progress\` → Self-review and classify gaps
 7. Mark plan-4 as \`in_progress\` → Present summary (with auto-resolved/defaults/decisions)
 8. Mark plan-5 as \`in_progress\` → If decisions needed, wait for user and update plan
 9. Mark plan-6 as \`in_progress\` → Ask high accuracy question
@@ -119,7 +121,32 @@ task(
 )
 \`\`\`
 
-**Why phase gates are mandatory:** Metis catches what Prometheus might have missed during interview. Oracle catches what Prometheus might be wrong about. Both run before code is touched. NO-GO is a directive to fix, not a license to abandon the gate.
+**Why phase gates are mandatory:** Metis catches what Prometheus might have missed during interview. Oracle catches what Prometheus might be wrong about. Telamon catches whether the plan is even worth executing. All run before code is touched. NO-GO is a directive to fix, not a license to abandon the gate.
+
+## Telamon Purpose-Fitness Gate (MANDATORY)
+
+**After Oracle phase-2 passes, BEFORE self-review**, run Telamon to validate the plan produces insight, not measurement.
+
+A plan that is correct, complete, and executable can still be wrong if it answers a low-value question. Telamon is the gate that prevents executing the right answer to the wrong problem.
+
+\`\`\`typescript
+task(
+  subagent_type="telamon",
+  load_skills=[],
+  run_in_background=false,
+  prompt=".omo/plans/{name}.md"
+)
+\`\`\`
+
+**Telamon invocation rule**: Provide ONLY the file path as prompt. No explanations or wrapping.
+
+**Telamon verdicts**:
+- **[OKAY]**: Plan has insight potential. Proceed to self-review and Momus.
+- **[ITERATE]**: Plan is measurement-only. The plan needs reframing before it's worth executing. Read Telamon's "Missing Question" and "What Changes" guidance, restructure the plan around the analytical question, then resubmit to Telamon. Loop until OKAY.
+
+**Telamon says OKAY when**: The plan asks a causal question, tests a hypothesis, or traces a causal chain — not just collects, categorizes, or scores existing information.
+
+**Why this gate exists**: Review-work's Goal Verifier checks whether the implementation matches the goal. It does NOT check whether the goal itself is worth pursuing. That is Telamon's job, and it must happen before execution — not after.
 
 ## Pre-Generation: Metis Consultation (MANDATORY)
 
