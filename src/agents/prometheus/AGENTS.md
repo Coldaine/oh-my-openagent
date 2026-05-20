@@ -40,3 +40,26 @@ Plans use YAML with parallel task graph:
 - Waves (parallel execution groups)
 - Tasks with dependencies, category, skills
 - Each task has atomic scope + verification criteria
+
+## PLAN ENHANCEMENTS (commit `ea1eb6e3`)
+
+`plan-template.ts` now mandates three additional sections:
+
+**Pre-Mortem Risk Analysis** (MANDATORY for Medium+ effort tasks):
+- Overall risk level
+- Critical failure modes table: scenario / likelihood / impact / mitigation
+- Key assumptions that must hold for the plan to succeed
+
+**Task Contracts** (MANDATORY):
+- Interface definitions between every pair of dependent tasks
+- Format: `from_task → to_task`, `interface` (what is passed), `format` (exact structure)
+- Prevents agents from guessing what a preceding task produced
+
+**Sizing Limits per task:**
+- `estimated_files` must be ≤ 3
+- `estimated_lines` must be ≤ 300
+- Tasks exceeding these must be decomposed further
+
+**Failure Modes per task** (REQUIRED for Medium+ priority): explicit conditions that indicate the task has failed and what to do next.
+
+`plan-generation.ts` Oracle phase-2 verification expanded from 6 to 9 checks (added: pre-mortem present, sizing within limits, contracts cover all dependencies). Self-review checklist expanded from 9 to 12 checks.
