@@ -88,14 +88,17 @@ task(
   subagent_type="oracle",
   load_skills=[],
   run_in_background=false,
-  prompt=\`Verify Prometheus phase 2 (plan generation). Read .omo/plans/{name}.md end to end. Confirm:
-  1. Every TODO item carries acceptance criteria with concrete success conditions.
-  2. Each task has a recommended agent profile and a Wave assignment.
-  3. Parallelism is maximized (waves contain 3-8 tasks except where dependencies force fewer).
-  4. Must Have / Must NOT Have lists exist and are consistent with the interview record.
-  5. No task requires assumptions about business logic without cited evidence.
-  6. Plan path is .omo/plans/, not docs/ or plans/.
-  Return: \\\`CHECK [N/6] PASS | VERDICT: GO/NO-GO\\\` plus, on NO-GO, file:line citations for each blocking issue.\`
+   prompt=\`Verify Prometheus phase 2 (plan generation). Read .omo/plans/{name}.md end to end. Confirm:
+   1. Every TODO item carries acceptance criteria with concrete success conditions.
+   2. Each task has a recommended agent profile and a Wave assignment.
+   3. Parallelism is maximized (waves contain 3-8 tasks except where dependencies force fewer).
+   4. Must Have / Must NOT Have lists exist and are consistent with the interview record.
+   5. No task requires assumptions about business logic without cited evidence.
+   6. Plan path is .omo/plans/, not docs/ or plans/.
+   7. Pre-mortem risk analysis is present with failure modes for medium+ complexity.
+   8. Task sizing limits are respected (≤3 files, ≤300 lines per task).
+   9. Task contracts are defined for all dependent task pairs.
+   Return: \\\`CHECK [N/9] PASS | VERDICT: GO/NO-GO\\\` plus, on NO-GO, file:line citations for each blocking issue.\`
 )
 \`\`\`
 
@@ -201,6 +204,9 @@ Before presenting summary, verify:
 □ QA scenarios include BOTH happy-path AND negative/error scenarios?
 □ Zero acceptance criteria require human intervention?
 □ QA scenarios use specific selectors/data, not vague descriptions?
+□ Pre-mortem risk analysis present for medium+ complexity plans?
+□ Task sizing: estimated_files ≤ 3, estimated_lines ≤ 300 per task?
+□ Task contracts defined for all dependent task pairs?
 \`\`\`
 
 ### Gap Handling Protocol
