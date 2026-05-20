@@ -4,6 +4,10 @@ import { buildPlanAgentSystemPrepend, isPlanAgent } from "./constants"
 import { buildSystemContentWithTokenLimit } from "./token-limiter"
 
 const FREE_OR_LOCAL_PROMPT_TOKEN_LIMIT = 24000
+
+const INTENT_CHECK_PREAMBLE = `<intent_check>
+Before executing the caller's request, briefly check: is the literal request asking for the right thing? If the actual need differs from the literal ask, note the gap and address the actual need. If uncertain, state your interpretation and proceed.
+</intent_check>`
 const PLAN_AGENT_PROMPT_BASE = `
 
 Additional requirements for this planning request:
@@ -78,9 +82,10 @@ export function buildSystemContent(input: BuildSystemContentInput): string | und
     : ""
 
   const baseAgentsContext = agentsContext ?? planAgentPrepend
-  const effectiveAgentsContext = !isPlan && skillsSection
-    ? [baseAgentsContext, skillsSection].filter(Boolean).join("\n\n")
-    : baseAgentsContext
+  const effectiveAgentsContext = [INTENT_CHECK_PREAMBLE, baseAgentsContext].filter(Boolean).join("\n\n")
+  const finalAgentsContext = !isPlan && skillsSection
+    ? [effectiveAgentsContext, skillsSection].filter(Boolean).join("\n\n")
+    : effectiveAgentsContext
 
   const effectiveMaxPromptTokens = maxPromptTokens
     ?? (usesFreeOrLocalModel(model) ? FREE_OR_LOCAL_PROMPT_TOKEN_LIMIT : undefined)
