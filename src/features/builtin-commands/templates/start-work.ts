@@ -102,6 +102,11 @@ After reading the plan file, you MUST decompose every plan task into granular, i
 - Each plan checkbox item (e.g., \`- [ ] Add user authentication\`) must be split into concrete, actionable sub-tasks
 - Sub-tasks should be specific enough that each one touches a clear set of files/functions
 - Include: file to modify, what to change, expected behavior, and how to verify
+- **CRITICAL: Every delegated task MUST also preserve strategic context from the plan:**
+  - **Objective** — WHY this work matters (the plan's Core Objective for this task)
+  - **Guardrails** — Must NOTs and relevant constraints from the plan that apply to this task
+  - **Expected Learning / Decision Impact** — what belief should change or what decision this work informs
+  - **Evidence Threshold** — what constitutes proof of completion (acceptance criteria from the plan)
 - Do NOT leave any task vague - "implement feature X" is NOT acceptable; "add validateToken() to src/auth/middleware.ts that checks JWT expiry and returns 401" IS acceptable
 
 **Example breakdown**:
@@ -112,6 +117,18 @@ Plan task: \`- [ ] Add rate limiting to API\`
   3. Add rate limit headers (X-RateLimit-Limit, X-RateLimit-Remaining) to response in \`rate-limiter.ts\`
   4. Add test: verify 429 response after exceeding limit in \`src/middleware/rate-limiter.test.ts\`
   5. Add test: verify headers are present on normal responses
+
+**When delegating each task (via \`task()\` tool), include this strategic context block**:
+\`\`\`
+## Strategic Context
+
+**Objective**: [Plan's Core Objective for this task — WHY this matters]
+**Guardrails**: [Relevant Must NOTs from the plan that apply here]
+**Expected Learning**: [What we expect to learn or decide from this work]
+**Evidence**: [How completion will be verified — refer to plan's Acceptance Criteria / QA scenarios]
+
+**Plan Reference**: [Task N from plan at .omo/plans/{plan-name}.md]
+\`\`\`
 
 Register these as task/todo items so progress is tracked and visible throughout the session.
 
