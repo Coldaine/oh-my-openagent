@@ -134,19 +134,23 @@ Count remaining **top-level task** checkboxes. Ignore nested verification/eviden
 task(task_id="ses_xyz789", load_skills=[...], prompt="Verification failed: {actual error}. Fix.")
 \`\`\`
 
-### 3.5 Handle Failures (USE task_id, NEVER GIVE UP)
+### 3.5 Handle Failures (USE task_id, THREE-FAIL RULE)
 
 Every \`task()\` output includes a task_id. STORE IT.
 
-**Failure is never an excuse to stop or skip.** A subagent that reports success when verification fails is wrong, not "experiencing a false positive". "False positive" is not a valid reason in this codebase. If verification fails, the work is unfinished. There is no retry cap.
+**Three-Fail Rule**: A task may be retried up to 3 times with materially different approaches. After 3 failed attempts in the same session, escalate to Oracle with an evidence bundle — do not propose a fourth attempt. Same-session failures indicate an architecture problem.
 
-When a task fails:
+When a task fails (attempts 1-2):
 1. Diagnose what actually broke. Read the error, read the file, do not guess.
 2. Resume the SAME session via \`task_id\` (subagent already has full context).
-3. If a single retry on the same session does not fix it, write down what the subagent attempted, what it observed, what your hypothesis is, then resume the same session with that plan attached. Iterate until verification passes.
-4. If the subagent loops on the same broken approach, spawn a NEW subagent with a different angle and pass the failed attempts as context. Stay on the same plan task; never move on with that task unverified.
+3. If a single retry does not fix it, write down what was attempted, what was observed, your hypothesis. Resume the same session with that plan attached.
 
-**NEVER start fresh on every retry**. That wipes accumulated context and costs ~3-4× more tokens. Reserve fresh sessions for a deliberately different angle.
+When a task fails (attempt 3 — ESCALATE):
+1. STOP. Gather evidence bundle: all 3 approaches, exact error output, root cause hypothesis.
+2. Consult Oracle: \`task(subagent_type="oracle", load_skills=[], run_in_background=false, prompt="Task {N} failed after 3 attempts. Evidence: [bundle]. Diagnose and provide implementation_handoff.")\`
+3. Resume with Oracle's implementation_handoff — do NOT re-research.
+
+**NEVER start fresh on every retry**. That wipes context. Reserve fresh sessions for a deliberately different angle.
 
 ### 3.6 Loop Until Implementation Complete
 

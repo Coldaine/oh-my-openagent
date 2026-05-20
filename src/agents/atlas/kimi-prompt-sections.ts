@@ -127,13 +127,13 @@ Count remaining **top-level task** checkboxes. Ignore nested verification/eviden
 
 **If verification fails**: resume the SAME session via \`task_id\`. Do not start fresh.
 
-### 3.5 Handle Failures (USE task_id, NEVER GIVE UP)
+### 3.5 Handle Failures (USE task_id, THREE-FAIL RULE)
 
 \`\`\`typescript
-task(task_id="ses_xyz789", load_skills=[...], prompt="FAILED: {actual error}. Diagnosis: {what you observed}. Fix by: {specific instruction}")
+task(task_id="ses_xyz789", load_skills=[...], prompt="ATTEMPT {N}/3 FAILED: {actual error}. Diagnosis: {what you observed}. Fix by: {different approach}")
 \`\`\`
 
-**Failure is never an excuse to stop or skip.** A subagent reporting success when verification fails is wrong, not "experiencing a false positive". "False positive" is not a valid reason in this codebase. There is no retry cap. Diagnose, attach a plan, resume the same session until verification passes. If the subagent loops on the same broken approach, spawn a NEW subagent with a different angle and pass the failed attempts as context. Never move on with a task unverified.
+**Three-Fail Rule**: Retry up to 3 times with materially different approaches. After 3 failed attempts, escalate to Oracle with an evidence bundle (what was attempted, what was observed, your hypothesis). Pass Oracle's implementation_handoff to the implementer — do NOT re-research.
 
 ### 3.6 Loop Until Implementation Complete
 
