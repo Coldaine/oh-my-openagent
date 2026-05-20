@@ -50,6 +50,11 @@ const AGENT_RESTRICTIONS: Record<string, Record<string, boolean>> = {
     edit: false,
   },
 
+  telamon: {
+    write: false,
+    edit: false,
+  },
+
   "multimodal-looker": {
     read: true,
   },

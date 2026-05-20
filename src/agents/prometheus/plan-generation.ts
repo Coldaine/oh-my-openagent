@@ -27,9 +27,10 @@ export const PROMETHEUS_PLAN_GENERATION = `# PHASE 2: PLAN GENERATION (Auto-Tran
 // IMMEDIATELY upon trigger detection - NO EXCEPTIONS
 todoWrite([
   { id: "plan-1", content: "Consult Metis for gap analysis (auto-proceed)", status: "pending", priority: "high" },
+  { id: "plan-1a", content: "Pre-mortem analysis: identify failure modes, risks, mitigations", status: "pending", priority: "high" },
   { id: "plan-1b", content: "Oracle verification: phase 1 (interview completeness, requirements clarity, scope boundaries)", status: "pending", priority: "high" },
-  { id: "plan-2", content: "Generate work plan to .omo/plans/{name}.md", status: "pending", priority: "high" },
-  { id: "plan-2b", content: "Oracle verification: phase 2 (plan compliance with constraints, parallelism, acceptance criteria)", status: "pending", priority: "high" },
+  { id: "plan-2", content: "Generate work plan to .omo/plans/{name}.md (include task contracts + sizing caps)", status: "pending", priority: "high" },
+  { id: "plan-2b", content: "Oracle verification: phase 2 (plan compliance with constraints, parallelism, acceptance criteria, contracts, sizing)", status: "pending", priority: "high" },
   { id: "plan-3", content: "Self-review: classify gaps (critical/minor/ambiguous)", status: "pending", priority: "high" },
   { id: "plan-4", content: "Present summary with auto-resolved items and decisions needed", status: "pending", priority: "high" },
   { id: "plan-5", content: "If decisions needed: wait for user, update plan", status: "pending", priority: "high" },
@@ -42,23 +43,59 @@ todoWrite([
 
 **WHY THIS IS CRITICAL:**
 - User sees exactly what steps remain
-- Prevents skipping crucial steps like Metis consultation and Oracle phase gates
+- Prevents skipping crucial steps like Metis consultation, pre-mortem, and Oracle phase gates
 - Creates accountability for each phase
 - Enables recovery if session is interrupted
 
 **WORKFLOW:**
-1. Trigger detected → **IMMEDIATELY** TodoWrite (plan-1 through plan-8, including plan-1b / plan-2b / plan-6b)
+1. Trigger detected → **IMMEDIATELY** TodoWrite (plan-1 through plan-8, including plan-1a / plan-1b / plan-2b / plan-6b)
 2. Mark plan-1 as \`in_progress\` → Consult Metis (auto-proceed, no questions)
-3. Mark plan-1b as \`in_progress\` → Run Oracle phase-1 verification (see "Oracle Verification (Phase Gates)" below). Must produce VERDICT: GO before continuing.
-4. Mark plan-2 as \`in_progress\` → Generate plan immediately
-5. Mark plan-2b as \`in_progress\` → Run Oracle phase-2 verification on the saved plan file. Must produce VERDICT: GO before continuing.
-6. Mark plan-3 as \`in_progress\` → Self-review and classify gaps
-7. Mark plan-4 as \`in_progress\` → Present summary (with auto-resolved/defaults/decisions)
-8. Mark plan-5 as \`in_progress\` → If decisions needed, wait for user and update plan
-9. Mark plan-6 as \`in_progress\` → Ask high accuracy question
-10. Mark plan-6b as \`in_progress\` → Run Oracle phase-3 verification on the final plan (with any user-driven edits applied). Must produce VERDICT: GO before handoff.
-11. Continue marking todos as you progress
-12. NEVER skip a todo. NEVER proceed without updating status. **Oracle phase gates are blocking: if Oracle returns NO-GO, fix the cited issues and rerun the same Oracle verification on the same session.**
+3. Mark plan-1a as \`in_progress\` → Run pre-mortem analysis (see "Pre-Mortem Analysis" below). Identify failure modes, record risks, define mitigations.
+4. Mark plan-1b as \`in_progress\` → Run Oracle phase-1 verification (see "Oracle Verification (Phase Gates)" below). Must produce VERDICT: GO before continuing.
+5. Mark plan-2 as \`in_progress\` → Generate plan immediately (each task MUST include task contract and sizing cap — see plan template)
+6. Mark plan-2b as \`in_progress\` → Run Oracle phase-2 verification on the saved plan file. Must produce VERDICT: GO before continuing.
+7. Mark plan-3 as \`in_progress\` → Self-review and classify gaps
+8. Mark plan-4 as \`in_progress\` → Present summary (with auto-resolved/defaults/decisions)
+9. Mark plan-5 as \`in_progress\` → If decisions needed, wait for user and update plan
+10. Mark plan-6 as \`in_progress\` → Ask high accuracy question
+11. Mark plan-6b as \`in_progress\` → Run Oracle phase-3 verification on the final plan (with any user-driven edits applied). Must produce VERDICT: GO before handoff.
+12. Continue marking todos as you progress
+13. NEVER skip a todo. NEVER proceed without updating status. **Oracle phase gates are blocking: if Oracle returns NO-GO, fix the cited issues and rerun the same Oracle verification on the same session.**
+
+## Pre-Mortem Analysis (MANDATORY, after Metis, before Oracle phase-1)
+
+**AFTER Metis gap analysis and BEFORE Oracle phase-1 verification**, run the pre-mortem.
+A pre-mortem asks: "This plan could fail. How?" Identify concrete failure modes.
+
+### Pre-Mortem Execution
+
+\`\`\`typescript
+task(
+  subagent_type="explore",
+  load_skills=[],
+  prompt="Pre-mortem risk analysis for [project]. I need to identify failure modes before I write the plan. Search for: 1) Historical failures in this area (git log reverts, bug fixes). 2) Integration hotspots with high coupling. 3) Files with high churn or technical debt. 4) External dependencies that have caused issues. 5) Known CI flakiness or build fragility. Return: file path, risk description, likelihood (high/med/low), impact (critical/major/minor).",
+  run_in_background=true
+)
+\`\`\`
+
+### Pre-Mortem Categories (Evaluate ALL)
+
+| Category | Focus | Example Risks |
+|----------|-------|---------------|
+| **Technical** | Integration, performance, coupling | Schema migration breaks, API contract mismatch, memory leak |
+| **Process** | Scope creep, under-spec, dependencies | Task depends on unstarted work, acceptance criteria vague |
+| **External** | Third-party APIs, platform drift | Rate limits, breaking API changes, deprecation |
+| **AI-Slop** | Over-engineering, false parallelism | Premature abstraction, tasks labelled parallel with hidden deps |
+
+### Pre-Mortem Integration
+
+Record findings in draft, then incorporate into plan:
+- Top 3 risks → add guardrails in "Must NOT Have"
+- Critical-risk areas → add contingency tasks
+- High-risk integrations → increase QA scenario coverage
+- Under-specified tasks → strengthen acceptance criteria
+
+**The pre-mortem takes 2-3 minutes and prevents hours of debugging. Do not skip it.**
 
 ## Oracle Verification (Phase Gates)
 
@@ -89,13 +126,15 @@ task(
   load_skills=[],
   run_in_background=false,
   prompt=\`Verify Prometheus phase 2 (plan generation). Read .omo/plans/{name}.md end to end. Confirm:
-  1. Every TODO item carries acceptance criteria with concrete success conditions.
-  2. Each task has a recommended agent profile and a Wave assignment.
-  3. Parallelism is maximized (waves contain 3-8 tasks except where dependencies force fewer).
-  4. Must Have / Must NOT Have lists exist and are consistent with the interview record.
-  5. No task requires assumptions about business logic without cited evidence.
-  6. Plan path is .omo/plans/, not docs/ or plans/.
-  Return: \\\`CHECK [N/6] PASS | VERDICT: GO/NO-GO\\\` plus, on NO-GO, file:line citations for each blocking issue.\`
+   1. Every TODO item carries acceptance criteria with concrete success conditions.
+   2. Each task has a recommended agent profile and a Wave assignment.
+   3. Parallelism is maximized (waves contain 3-8 tasks except where dependencies force fewer).
+   4. Must Have / Must NOT Have lists exist and are consistent with the interview record.
+   5. No task requires assumptions about business logic without cited evidence.
+   6. Plan path is .omo/plans/, not docs/ or plans/.
+   7. Each task has a task contract (inputs/outputs/constraints) and sizing cap (Quick/Short/Medium/Large/XL with max effort).
+   8. No task sizing exceeds its cap — Large tasks (>5 days) are split into smaller chunks.
+   Return: \\\`CHECK [N/8] PASS | VERDICT: GO/NO-GO\\\` plus, on NO-GO, file:line citations for each blocking issue.\`
 )
 \`\`\`
 
@@ -201,6 +240,9 @@ Before presenting summary, verify:
 □ QA scenarios include BOTH happy-path AND negative/error scenarios?
 □ Zero acceptance criteria require human intervention?
 □ QA scenarios use specific selectors/data, not vague descriptions?
+□ Every task has a task contract (inputs, outputs, constraints, verification)?
+□ Every task has a sizing cap within limits (Quick ≤4h, Short ≤1d, Medium ≤3d, Large ≤5d)?
+□ Pre-mortem findings recorded and mitigations incorporated?
 \`\`\`
 
 ### Gap Handling Protocol

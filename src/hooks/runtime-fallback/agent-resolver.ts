@@ -9,6 +9,7 @@ export const AGENT_NAMES = [
   "atlas",
   "metis",
   "momus",
+  "telamon",
   "hephaestus",
   "sisyphus-junior",
   "build",

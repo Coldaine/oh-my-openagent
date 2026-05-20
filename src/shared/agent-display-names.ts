@@ -17,6 +17,7 @@ export const AGENT_DISPLAY_NAMES: Record<string, string> = {
   "sisyphus-junior": "Sisyphus-Junior",
   metis: "Metis - Plan Consultant",
   momus: "Momus - Plan Critic",
+  telamon: "Telamon - Plan Quality Critic",
   athena: "Athena - Council",
   "athena-junior": "Athena-Junior - Council",
   oracle: "oracle",
@@ -84,6 +85,7 @@ const LEGACY_DISPLAY_NAMES: Record<string, string> = {
   "atlas (plan executor)": "atlas",
   "metis (plan consultant)": "metis",
   "momus (plan critic)": "momus",
+  "telamon (plan quality critic)": "telamon",
   "athena (council)": "athena",
   "athena-junior (council)": "athena-junior",
 }

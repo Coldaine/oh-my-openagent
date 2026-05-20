@@ -4,6 +4,7 @@ import { PROMETHEUS_PLAN_GENERATION } from "./plan-generation"
 import { PROMETHEUS_HIGH_ACCURACY_MODE } from "./high-accuracy-mode"
 import { PROMETHEUS_PLAN_TEMPLATE } from "./plan-template"
 import { PROMETHEUS_BEHAVIORAL_SUMMARY } from "./behavioral-summary"
+import { PROMETHEUS_PRE_MORTEM } from "./pre-mortem"
 import { getGptPrometheusPrompt } from "./gpt"
 import { getGeminiPrometheusPrompt } from "./gemini"
 import { isGptModel, isGeminiModel } from "../types"
@@ -15,6 +16,7 @@ import { isGptModel, isGeminiModel } from "../types"
 export const PROMETHEUS_SYSTEM_PROMPT = `${PROMETHEUS_IDENTITY_CONSTRAINTS}
 ${PROMETHEUS_INTERVIEW_MODE}
 ${PROMETHEUS_PLAN_GENERATION}
+${PROMETHEUS_PRE_MORTEM}
 ${PROMETHEUS_HIGH_ACCURACY_MODE}
 ${PROMETHEUS_PLAN_TEMPLATE}
 ${PROMETHEUS_BEHAVIORAL_SUMMARY}`

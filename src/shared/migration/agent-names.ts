@@ -35,6 +35,11 @@ export const AGENT_NAME_MAP: Record<string, string> = {
   "Momus (Plan Critic)": "momus",
   momus: "momus",
 
+  // Telamon variants → "telamon"
+  "Telamon - Plan Quality Critic": "telamon",
+  "Telamon (Plan Quality Critic)": "telamon",
+  telamon: "telamon",
+
   // Sisyphus-Junior → "sisyphus-junior"
   "Sisyphus-Junior": "sisyphus-junior",
   "sisyphus-junior": "sisyphus-junior",
@@ -55,6 +60,7 @@ export const BUILTIN_AGENT_NAMES = new Set([
   "multimodal-looker",
   "metis", // was "Metis - Plan Consultant"
   "momus", // was "Momus - Plan Critic"
+  "telamon", // was "Telamon - Plan Quality Critic"
   "prometheus", // was "Prometheus - Plan Builder"
   "atlas", // was "Atlas"
   "build",

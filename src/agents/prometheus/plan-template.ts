@@ -20,7 +20,9 @@ Generate plan to: \`.omo/plans/{name}.md\`
 > - [Output 1]
 > - [Output 2]
 > 
-> **Estimated Effort**: [Quick | Short | Medium | Large | XL]
+> **Estimated Effort**: [Quick ≤4h | Short ≤1d | Medium ≤3d | Large ≤5d | XL ≤10d]
+> **Sizing Cap**: [Max effort per task, enforced by Oracle phase gates. Large+ tasks MUST be split.]
+> **Parallel Execution**: [YES - N waves | NO - sequential]
 > **Parallel Execution**: [YES - N waves | NO - sequential]
 > **Critical Path**: [Task X → Task Y → Task Z]
 
@@ -97,6 +99,14 @@ Evidence saved to \`.omo/evidence/task-{N}-{scenario-slug}.{ext}\`.
 > Maximize throughput by grouping independent tasks into parallel waves.
 > Each wave completes before the next begins.
 > Target: 5-8 tasks per wave. Fewer than 3 per wave (except final) = under-splitting.
+>
+> **Sizing Caps** (enforced by Oracle phase gates):
+> - Quick: ≤4 hours. Single concern, narrow scope. Default for Wave-1 scaffolding.
+> - Short: ≤1 day. Well-understood, few files. Default for core modules.
+> - Medium: ≤3 days. Multiple files, moderate complexity. Must have clear acceptance criteria.
+> - Large: ≤5 days. Complex, multi-file. **MUST be approved and MAY be split.**
+> - XL: ≤10 days. Epic-scale. **REQUIRES explicit split into sub-tasks before approval.**
+> - **Any task exceeding its sizing cap → automatically split.**
 
 \`\`\`
 Wave 1 (Start Immediately - foundation + scaffolding):
@@ -162,9 +172,23 @@ Max Concurrent: 7 (Waves 1 & 2)
 
 > Implementation + Test = ONE Task. Never separate.
 > EVERY task MUST have: Recommended Agent Profile + Parallelization info + QA Scenarios.
-> **A task WITHOUT QA Scenarios is INCOMPLETE. No exceptions.**
+> EVERY task MUST have: Task Contract (inputs/outputs/constraints) + Sizing Cap.
+> **A task WITHOUT a contract or sizing cap is INCOMPLETE. No exceptions.**
+> **A task exceeding its sizing cap MUST be split into sub-tasks.**
 
 - [ ] 1. [Task Title]
+
+  **Task Contract**:
+  > Formal contract defining what this task expects and produces.
+  > Enables independent execution without cross-task context.
+  - **Inputs**: [Files, data, or state this task reads. Be specific: file paths, API contracts, data schemas]
+  - **Outputs**: [Files, endpoints, or artifacts this task produces. Concrete paths and structures.]
+  - **Constraints**: [Hard constraints: Must NOT modify X, must preserve Y, size limits, naming rules]
+  - **Verification**: [How to verify the outputs match expectations. Command, tool, or scenario reference.]
+
+  **Sizing Cap**: [Quick ≤4h | Short ≤1d | Medium ≤3d | Large ≤5d | XL ≤10d]
+  - **Justification**: [Why this sizing is appropriate given scope and complexity]
+  - **Split if exceeded**: [If this task approaches its cap, describe how it splits]
 
   **What to do**:
   - [Clear implementation steps]

@@ -262,6 +262,7 @@ describe("AGENT_DISPLAY_NAMES", () => {
       "sisyphus-junior": "Sisyphus-Junior",
       metis: "Metis - Plan Consultant",
       momus: "Momus - Plan Critic",
+      telamon: "Telamon - Plan Quality Critic",
       athena: "Athena - Council",
       "athena-junior": "Athena-Junior - Council",
       oracle: "oracle",
