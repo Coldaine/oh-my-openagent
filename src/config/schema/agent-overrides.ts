@@ -2,10 +2,22 @@ import { z } from "zod"
 import { FallbackModelsSchema } from "./fallback-models"
 import { AgentPermissionSchema } from "./internal/permission"
 
+export const ModelRotationSchema = z.object({
+  /** Pool of model strings (e.g., "openai/gpt-5.5", "anthropic/claude-sonnet-4-6") to rotate through */
+  pool: z.array(z.string()).min(1),
+  /** Rotation strategy: round-robin cycles sequentially, shuffle uses seeded deterministic shuffle, random picks uniformly */
+  strategy: z.enum(["round-robin", "shuffle", "random"]).optional().default("round-robin"),
+  /** Optional seed for deterministic shuffle strategy */
+  seed: z.number().optional(),
+})
+
+export type ModelRotationConfig = z.infer<typeof ModelRotationSchema>
+
 export const AgentOverrideConfigSchema = z.object({
   /** @deprecated Use `category` instead. Model is inherited from category defaults. */
   model: z.string().optional(),
   fallback_models: FallbackModelsSchema.optional(),
+  model_rotation: ModelRotationSchema.optional(),
   variant: z.string().optional(),
   /** Category name to inherit model and other settings from CategoryConfig */
   category: z.string().optional(),
