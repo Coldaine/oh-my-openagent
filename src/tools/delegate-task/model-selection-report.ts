@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "fs"
+import { existsSync, readFileSync } from "node:fs"
 import type { ModelSelectionEvent } from "./model-selection-events"
 
 interface CountRow {

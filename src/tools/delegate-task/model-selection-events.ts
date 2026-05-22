@@ -1,5 +1,5 @@
-import { constants, mkdirSync, openSync, writeFileSync, writeSync, closeSync } from "fs"
-import { dirname, join } from "path"
+import { constants, mkdirSync, openSync, writeFileSync, writeSync, closeSync } from "node:fs"
+import { dirname, join } from "node:path"
 
 const SECURE_DIR_MODE = 0o700
 const SECURE_FILE_MODE = 0o600

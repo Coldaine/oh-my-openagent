@@ -18,6 +18,18 @@ export interface ResolveCategoryConfigResult {
   isUserConfiguredModel: boolean
 }
 
+function getConfiguredCategoryModel(configuredModel: string | string[] | undefined): string | string[] | undefined {
+  if (Array.isArray(configuredModel)) {
+    return configuredModel
+  }
+
+  if (typeof configuredModel === "string" && configuredModel.trim().length > 0) {
+    return configuredModel
+  }
+
+  return undefined
+}
+
 /**
  * Resolve the configuration for a given category name.
  * Merges default and user configurations, handles model resolution.
@@ -52,11 +64,7 @@ export function resolveCategoryConfig(
   // Model priority for categories: user override > category default > system default.
   // Pools remain unresolved here so category execution can apply round-robin selection
   // with the actual category scope.
-  const configuredUserModel = Array.isArray(userConfig?.model)
-    ? userConfig.model
-    : (typeof userConfig?.model === "string" && userConfig.model.trim().length > 0)
-      ? userConfig.model
-      : undefined
+  const configuredUserModel = getConfiguredCategoryModel(userConfig?.model)
   const model = configuredUserModel ?? defaultConfig?.model ?? systemDefaultModel
   const isUserConfiguredModel = configuredUserModel !== undefined
   const config: CategoryConfig = {

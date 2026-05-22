@@ -1,17 +1,16 @@
 /// <reference types="bun-types" />
 
 import { describe, expect, test } from "bun:test"
-import { mkdtempSync, readFileSync } from "fs"
-import { join } from "path"
-import { tmpdir } from "os"
+import { readFileSync } from "node:fs"
 import {
   appendModelSelectionEvent,
   createModelSelectionEvent,
   resetModelSelectionEvents
 } from "./model-selection-events"
+import { createTemporaryModelSelectionEventsFile } from "./model-selection-test-support"
 
 function createEventsFile(): string {
-  return join(mkdtempSync(join(tmpdir(), "omo-model-selection-")), "events.jsonl")
+  return createTemporaryModelSelectionEventsFile("omo-model-selection-")
 }
 
 describe("model-selection-events", () => {
