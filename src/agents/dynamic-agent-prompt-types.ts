@@ -20,5 +20,5 @@ export interface AvailableSkill {
 export interface AvailableCategory {
   name: string
   description: string
-  model?: string
+  model?: string | string[]
 }

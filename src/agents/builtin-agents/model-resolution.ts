@@ -3,14 +3,15 @@ import { transformModelForProvider } from "../../shared/provider-model-id-transf
 
 export function applyModelResolution(input: {
   uiSelectedModel?: string
-  userModel?: string
+  userModel?: string | string[]
+  agentName?: string
   requirement?: { fallbackChain?: { providers: string[]; model: string; variant?: string }[] }
   availableModels: Set<string>
   systemDefaultModel?: string
 }) {
-  const { uiSelectedModel, userModel, requirement, availableModels, systemDefaultModel } = input
+  const { uiSelectedModel, userModel, agentName, requirement, availableModels, systemDefaultModel } = input
   return resolveModelPipeline({
-    intent: { uiSelectedModel, userModel },
+    intent: { uiSelectedModel, userModel, agentName },
     constraints: { availableModels },
     policy: { fallbackChain: requirement?.fallbackChain, systemDefaultModel },
   })

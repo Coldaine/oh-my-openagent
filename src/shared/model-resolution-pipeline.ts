@@ -1,9 +1,11 @@
 import { log as writeLog } from "./logger"
 import * as connectedProvidersCache from "./connected-providers-cache"
 import { fuzzyMatchModel } from "./model-availability"
-import type { FallbackEntry } from "./model-requirements"
 import { transformModelForProvider } from "./provider-model-id-transform"
 import { normalizeModel } from "./model-normalization"
+import { isModelPool } from "./model-pool-utils"
+import { nextModel } from "./model-pool-state"
+import type { ModelResolutionRequest, ModelResolutionResult } from "./model-resolution-types"
 
 type LogImplementation = typeof writeLog
 
@@ -24,37 +26,23 @@ export function _setModelResolutionLogImplementationForTesting(
   logImplementationForTesting = logImplementation
 }
 
-export type ModelResolutionRequest = {
-  intent?: {
-    uiSelectedModel?: string
-    userModel?: string
-    userFallbackModels?: string[]
-    categoryDefaultModel?: string
+function resolvePool(
+  model: string | string[] | undefined,
+  categoryName?: string,
+  agentName?: string,
+): string | undefined {
+  if (model === undefined) return undefined
+  if (isModelPool(model)) {
+    const scope = categoryName ? "category" : "agent"
+    const name = categoryName ?? agentName ?? "unknown"
+    const selected = nextModel(scope, name, model)
+    if (selected) {
+      log(`Model pool resolved for ${scope}:${name}`, { pool: model, selected })
+      return selected
+    }
   }
-  constraints: {
-    availableModels: Set<string>
-    connectedProviders?: string[] | null
-  }
-  policy?: {
-    fallbackChain?: FallbackEntry[]
-    systemDefaultModel?: string
-  }
+  return normalizeModel(model as string)
 }
-
-export type ModelResolutionProvenance =
-  | "override"
-  | "category-default"
-  | "provider-fallback"
-  | "system-default"
-
-export type ModelResolutionResult = {
-  model: string
-  provenance: ModelResolutionProvenance
-  variant?: string
-  attempted?: string[]
-  reason?: string
-}
-
 
 export function resolveModelPipeline(
   request: ModelResolutionRequest,
@@ -71,13 +59,13 @@ export function resolveModelPipeline(
     return { model: normalizedUiModel, provenance: "override" }
   }
 
-  const normalizedUserModel = normalizeModel(intent?.userModel)
+  const normalizedUserModel = resolvePool(intent?.userModel, intent?.categoryName, intent?.agentName)
   if (normalizedUserModel) {
     log("Model resolved via config override", { model: normalizedUserModel })
     return { model: normalizedUserModel, provenance: "override" }
   }
 
-  const normalizedCategoryDefault = normalizeModel(intent?.categoryDefaultModel)
+  const normalizedCategoryDefault = resolvePool(intent?.categoryDefaultModel, intent?.categoryName, intent?.agentName)
   if (normalizedCategoryDefault) {
     attempted.push(normalizedCategoryDefault)
     if (availableModels.size > 0) {

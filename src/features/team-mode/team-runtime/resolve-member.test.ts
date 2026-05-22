@@ -3,6 +3,7 @@ declare const require: (name: string) => any
 const { describe, expect, mock, test, beforeEach } = require("bun:test")
 import type { ExecutorContext } from "../../../tools/delegate-task/executor-types"
 import type { Member } from "../types"
+import { resetCounter } from "../../../shared/model-pool-state"
 
 const resolveCategoryExecutionMock = mock()
 const resolveSubagentExecutionMock = mock()
@@ -27,6 +28,7 @@ function createExecutorContext(): ExecutorContext {
 describe("resolveMember", () => {
   beforeEach(() => {
     mock.restore()
+    resetCounter()
     resolveCategoryExecutionMock.mockReset()
     resolveSubagentExecutionMock.mockReset()
     buildSystemContentMock.mockReset()
@@ -104,6 +106,127 @@ describe("resolveMember", () => {
     const [, executorCtxArg] = resolveCategoryExecutionMock.mock.calls[0]
     expect(executorCtxArg.sisyphusJuniorModel).toBeUndefined()
   })
+
+
+
+  test("model pool category members resolve through resolveCategoryExecution", async () => {
+    //#given
+    const member = {
+      backendType: "in-process",
+      isActive: true,
+      kind: "category",
+      name: "pool-worker",
+      category: "model-pool-category",
+      prompt: "impl pool task",
+    } satisfies Member
+    resolveCategoryExecutionMock.mockResolvedValue({
+      agentToUse: "sisyphus-junior",
+      categoryModel: { providerID: "openai", modelID: "gpt-5.4-mini" },
+      categoryPromptAppend: "appendix",
+      maxPromptTokens: 256,
+      fallbackChain: [],
+    })
+
+    //#when
+    const result = await resolveMember(member, createExecutorContext(), "model-pool-category")
+
+    //#then
+    expect(resolveCategoryExecutionMock).toHaveBeenCalledTimes(1)
+    expect(resolveCategoryExecutionMock.mock.calls[0][0]).toEqual({
+      category: "model-pool-category",
+      description: "Resolve team member",
+      load_skills: [],
+      prompt: "impl pool task",
+      run_in_background: false,
+      subagent_type: "sisyphus-junior",
+    })
+    expect(result.model).toEqual({ providerID: "openai", modelID: "gpt-5.4-mini" })
+  })
+
+  test("model pool category members do not apply sisyphusJuniorModel override", async () => {
+    //#given
+    const member = {
+      backendType: "in-process",
+      isActive: true,
+      kind: "category",
+      name: "pool-architect",
+      category: "model-pool-category",
+      prompt: "design pool task",
+    } satisfies Member
+    const ctxWithJuniorOverride: ExecutorContext = {
+      ...createExecutorContext(),
+      sisyphusJuniorModel: "anthropic/claude-sonnet-4-6",
+    }
+    resolveCategoryExecutionMock.mockResolvedValue({
+      agentToUse: "sisyphus-junior",
+      categoryModel: { providerID: "openai", modelID: "gpt-5.4-mini" },
+      categoryPromptAppend: "appendix",
+      maxPromptTokens: 256,
+      fallbackChain: [],
+    })
+
+    //#when
+    await resolveMember(member, ctxWithJuniorOverride, "model-pool-category")
+
+    //#then
+    const [, executorCtxArg] = resolveCategoryExecutionMock.mock.calls[0]
+    expect(executorCtxArg.sisyphusJuniorModel).toBeUndefined()
+  })
+
+  test("model pool category members preserve category pool rotation result", async () => {
+    //#given
+    const members = [
+      {
+        backendType: "in-process",
+        isActive: true,
+        kind: "category",
+        name: "pool-one",
+        category: "model-pool-category",
+        prompt: "one",
+      },
+      {
+        backendType: "in-process",
+        isActive: true,
+        kind: "category",
+        name: "pool-two",
+        category: "model-pool-category",
+        prompt: "two",
+      },
+      {
+        backendType: "in-process",
+        isActive: true,
+        kind: "category",
+        name: "pool-three",
+        category: "model-pool-category",
+        prompt: "three",
+      },
+    ] satisfies Member[]
+    const selectedModels = ["gpt-5.4-mini", "gpt-5.5", "gpt-5.4-mini"]
+    resolveCategoryExecutionMock.mockImplementation(async () => {
+      const modelID = selectedModels.shift()
+      return {
+        agentToUse: "sisyphus-junior",
+        categoryModel: { providerID: "openai", modelID },
+        categoryPromptAppend: "appendix",
+        maxPromptTokens: 256,
+        fallbackChain: [],
+      }
+    })
+
+    //#when
+    const results = []
+    for (const member of members) {
+      results.push(await resolveMember(member, createExecutorContext(), "model-pool-category"))
+    }
+
+    //#then
+    expect(results.map((result) => result.model)).toEqual([
+      { providerID: "openai", modelID: "gpt-5.4-mini" },
+      { providerID: "openai", modelID: "gpt-5.5" },
+      { providerID: "openai", modelID: "gpt-5.4-mini" },
+    ])
+  })
+
 
   test("routes subagent members through resolveSubagentExecution", async () => {
     // given

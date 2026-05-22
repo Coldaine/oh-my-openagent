@@ -22,4 +22,62 @@ describe("resolveModelPipeline", () => {
     expect(result).toEqual({ model: "openai/gpt-5.3-codex", provenance: "override" })
     expect(hasExplicitUserConfigField).toBe(false)
   })
+
+  test("handles explicit string user models without pool normalization", () => {
+    //#given
+    const result = resolveModelPipeline({
+      intent: {
+        userModel: "openai/gpt-5.4-mini",
+      },
+      constraints: {
+        availableModels: new Set<string>(["openai/gpt-5.4-mini"]),
+      },
+    })
+
+    //#when / #then
+    expect(result).toEqual({ model: "openai/gpt-5.4-mini", provenance: "override" })
+  })
+
+  test("handles category default string models after upstream pool selection", () => {
+    //#given
+    const result = resolveModelPipeline({
+      intent: {
+        categoryDefaultModel: "openai/gpt-5.5",
+      },
+      constraints: {
+        availableModels: new Set<string>(["openai/gpt-5.5"]),
+      },
+    })
+
+    //#when / #then
+    expect(result).toEqual({
+      model: "openai/gpt-5.5",
+      provenance: "category-default",
+      attempted: ["openai/gpt-5.5"],
+    })
+  })
+
+  test("builder-style callers still pass a selected string model into the pipeline", () => {
+    //#given
+    const selectedModelFromBuilder = "anthropic/claude-sonnet-4-6"
+
+    //#when
+    const result = resolveModelPipeline({
+      intent: {
+        userModel: selectedModelFromBuilder,
+      },
+      constraints: {
+        availableModels: new Set<string>(),
+      },
+      policy: {
+        systemDefaultModel: "openai/gpt-5.4-mini",
+      },
+    })
+
+    //#then
+    expect(result?.model).toBe(selectedModelFromBuilder)
+    expect(Array.isArray(result?.model)).toBe(false)
+    expect(result?.provenance).toBe("override")
+  })
+
 })

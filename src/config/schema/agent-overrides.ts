@@ -4,7 +4,7 @@ import { AgentPermissionSchema } from "./internal/permission"
 
 export const AgentOverrideConfigSchema = z.object({
   /** @deprecated Use `category` instead. Model is inherited from category defaults. */
-  model: z.string().optional(),
+  model: z.union([z.string(), z.array(z.string()).min(1)]).optional(),
   fallback_models: FallbackModelsSchema.optional(),
   variant: z.string().optional(),
   /** Category name to inherit model and other settings from CategoryConfig */

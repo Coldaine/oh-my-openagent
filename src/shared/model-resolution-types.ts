@@ -14,11 +14,15 @@ export interface DelegatedModelConfig {
 export type ModelResolutionRequest = {
   intent?: {
     uiSelectedModel?: string
-    userModel?: string
-    categoryDefaultModel?: string
+    userModel?: string | string[]
+    userFallbackModels?: string[]
+    categoryDefaultModel?: string | string[]
+    categoryName?: string
+    agentName?: string
   }
   constraints: {
     availableModels: Set<string>
+    connectedProviders?: string[] | null
   }
   policy?: {
     fallbackChain?: FallbackEntry[]
