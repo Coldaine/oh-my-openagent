@@ -16,6 +16,12 @@ That file is the authoritative record of:
 - What to monitor to confirm changes are working
 - The template for justifying new changes
 
+When reviewing a PR prepared by Jules or any other asynchronous external coding agent, treat it as a draft patchset only. Review for:
+- intent fit with this fork
+- compatibility with fork-only behavior
+- interaction with existing coordination-substrate changes
+- explicit verification evidence before merge
+
 **Hard rule:** If you cannot articulate what specific OMO failure mode your change fixes AND
 how you would detect in a session log that the change is working, do not make the change.
 
