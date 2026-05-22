@@ -18,6 +18,9 @@ export function buildPlanDemoteConfig(
 
   for (const key of MODEL_SETTINGS_KEYS) {
     const value = planOverride?.[key] ?? prometheusConfig?.[key]
+    if (key === "model" && Array.isArray(value)) {
+      continue
+    }
     if (value !== undefined) {
       modelSettings[key] = value
     }

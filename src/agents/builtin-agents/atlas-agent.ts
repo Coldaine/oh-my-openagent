@@ -37,10 +37,14 @@ export function maybeCreateAtlasConfig(input: {
 
   const orchestratorOverride = agentOverrides["atlas"]
   const atlasRequirement = AGENT_MODEL_REQUIREMENTS["atlas"]
+  const atlasOverrideModel = typeof orchestratorOverride?.model === "string"
+    ? orchestratorOverride.model
+    : undefined
 
   const atlasResolution = applyModelResolution({
-    uiSelectedModel: orchestratorOverride?.model !== undefined ? undefined : uiSelectedModel,
-    userModel: orchestratorOverride?.model,
+    uiSelectedModel: atlasOverrideModel !== undefined ? undefined : uiSelectedModel,
+    userModel: atlasOverrideModel,
+    agentName: "atlas",
     requirement: atlasRequirement,
     availableModels,
     systemDefaultModel,

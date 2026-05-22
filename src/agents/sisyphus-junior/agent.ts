@@ -102,7 +102,7 @@ export function createSisyphusJuniorAgentWithOverrides(
     override = undefined
   }
 
-  const overrideModel = (override as { model?: string } | undefined)?.model
+  const overrideModel = typeof override?.model === "string" ? override.model : undefined
   const model = overrideModel ?? systemDefaultModel ?? SISYPHUS_JUNIOR_DEFAULTS.model
   const temperature = override?.temperature ?? SISYPHUS_JUNIOR_DEFAULTS.temperature
 

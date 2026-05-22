@@ -19,7 +19,7 @@ export function applyCategoryOverride(
   if (!categoryConfig) return config
 
   const result = { ...config } as AgentConfig & Record<string, unknown>
-  if (categoryConfig.model) result.model = categoryConfig.model
+  if (typeof categoryConfig.model === "string") result.model = categoryConfig.model
   if (categoryConfig.variant !== undefined) result.variant = categoryConfig.variant
   if (categoryConfig.temperature !== undefined) result.temperature = categoryConfig.temperature
   if (categoryConfig.reasoningEffort !== undefined) result.reasoningEffort = categoryConfig.reasoningEffort
@@ -41,8 +41,9 @@ export function mergeAgentConfig(
   directory?: string
 ): AgentConfig {
   const migratedOverride = migrateAgentConfig(override as Record<string, unknown>) as AgentOverrideConfig
-  const { prompt_append, ...rest } = migratedOverride
-  const merged = deepMerge(base, rest as Partial<AgentConfig>)
+  const { prompt_append, model, ...rest } = migratedOverride
+  const stringModelOverride = typeof model === "string" ? { model } : {}
+  const merged = deepMerge(base, { ...rest, ...stringModelOverride })
 
   if (merged.prompt && typeof merged.prompt === 'string' && merged.prompt.startsWith('file://')) {
     merged.prompt = resolvePromptAppend(merged.prompt, directory)
@@ -62,7 +63,7 @@ export function applyOverrides(
   directory?: string
 ): AgentConfig {
   let result = config
-  const overrideCategory = (override as Record<string, unknown> | undefined)?.category as string | undefined
+  const overrideCategory = override?.category
   if (overrideCategory) {
     result = applyCategoryOverride(result, overrideCategory, mergedCategories)
   }
