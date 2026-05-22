@@ -7,9 +7,7 @@ export function createSystemTransformHandler(args: {
   output: { system: string[] },
 ) => Promise<void> {
   return async (input, output): Promise<void> => {
-    const handoffSubstrate = args.hooks.handoffSubstrate?.[
-      "experimental.chat.system.transform"
-    ]
+    const handoffSubstrate = args.hooks.handoffSubstrate?.systemTransform
     
     if (handoffSubstrate) {
       await Promise.resolve(handoffSubstrate(input, output))

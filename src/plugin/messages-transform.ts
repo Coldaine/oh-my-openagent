@@ -197,9 +197,7 @@ export function createMessagesTransformHandler(args: {
   return async (input, output): Promise<void> => {
     await runMessagesTransformHookSafely(
       "handoffSubstrate",
-      args.hooks.handoffSubstrate?.[
-        "experimental.chat.messages.transform"
-      ],
+      args.hooks.handoffSubstrate?.messagesTransform,
       input,
       output,
     )
