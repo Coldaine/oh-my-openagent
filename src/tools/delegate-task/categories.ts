@@ -52,8 +52,13 @@ export function resolveCategoryConfig(
   // Model priority for categories: user override > category default > system default.
   // Pools remain unresolved here so category execution can apply round-robin selection
   // with the actual category scope.
-  const model = userConfig?.model ?? defaultConfig?.model ?? systemDefaultModel
-  const isUserConfiguredModel = userConfig?.model !== undefined
+  const configuredUserModel = Array.isArray(userConfig?.model)
+    ? userConfig.model
+    : (typeof userConfig?.model === "string" && userConfig.model.trim().length > 0)
+      ? userConfig.model
+      : undefined
+  const model = configuredUserModel ?? defaultConfig?.model ?? systemDefaultModel
+  const isUserConfiguredModel = configuredUserModel !== undefined
   const config: CategoryConfig = {
     ...defaultConfig,
     ...userConfig,
