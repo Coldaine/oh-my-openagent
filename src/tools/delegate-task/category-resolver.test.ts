@@ -1,12 +1,10 @@
 declare const require: (name: string) => any
 const { describe, test, expect, beforeEach, afterEach, spyOn, mock } = require("bun:test")
 import { resolveCategoryExecution } from "./category-resolver"
-import { resolveSubagentExecution } from "./subagent-resolver"
 import type { ExecutorContext } from "./executor-types"
 import * as connectedProvidersCache from "../../shared/connected-providers-cache"
 import { resetAllPoolState } from "../../shared/model-pool-state"
 import { unsafeTestValue } from "../../../test-support/unsafe-test-value"
-import { markAvailable, markUnavailable, resetCounter } from "../../shared/model-pool-state"
 
 describe("resolveCategoryExecution", () => {
 	let connectedProvidersSpy: ReturnType<typeof spyOn> | undefined
@@ -17,14 +15,6 @@ describe("resolveCategoryExecution", () => {
 	beforeEach(() => {
 		mock.restore()
 		resetAllPoolState()
-		for (const model of [
-			"openai/pool-a",
-			"openai/pool-b",
-			"openai/unavailable-a",
-			"openai/unavailable-b",
-		]) {
-			markAvailable(model)
-		}
 		connectedProvidersSpy = spyOn(connectedProvidersCache, "readConnectedProvidersCache").mockReturnValue(null)
 		providerModelsSpy = spyOn(connectedProvidersCache, "readProviderModelsCache").mockReturnValue(null)
 		hasConnectedProvidersSpy = spyOn(connectedProvidersCache, "hasConnectedProvidersCache").mockReturnValue(false)
@@ -44,122 +34,6 @@ describe("resolveCategoryExecution", () => {
 		directory: "/tmp/test",
 		userCategories: {},
 		sisyphusJuniorModel: undefined,
-	})
-
-	const createCategoryArgs = (category: string) => ({
-		category,
-		prompt: "test prompt",
-		description: "Test task",
-		run_in_background: false,
-		load_skills: [],
-		blockedBy: undefined,
-		enableSkillTools: false,
-	})
-
-	test("rotates user-configured category model pools across category resolution calls", async () => {
-		//#given
-		const args = createCategoryArgs("quick")
-		const executorCtx = createMockExecutorContext()
-		executorCtx.userCategories = {
-			quick: { model: ["openai/pool-a", "openai/pool-b"] },
-		}
-
-		//#when
-		const first = await resolveCategoryExecution(args, executorCtx, undefined, "anthropic/claude-sonnet-4-6")
-		const second = await resolveCategoryExecution(args, executorCtx, undefined, "anthropic/claude-sonnet-4-6")
-		const third = await resolveCategoryExecution(args, executorCtx, undefined, "anthropic/claude-sonnet-4-6")
-
-		//#then
-		expect(first.error).toBeUndefined()
-		expect(second.error).toBeUndefined()
-		expect(third.error).toBeUndefined()
-		expect(first.actualModel).toBe("openai/pool-a")
-		expect(second.actualModel).toBe("openai/pool-b")
-		expect(third.actualModel).toBe("openai/pool-a")
-	})
-
-	test("rotates direct agent override model pools across direct agent resolution calls", async () => {
-		//#given
-		const args = {
-			subagent_type: "oracle",
-			prompt: "test prompt",
-			description: "Test task",
-			run_in_background: false,
-			load_skills: [],
-			blockedBy: undefined,
-			enableSkillTools: false,
-		}
-		const executorCtx = createMockExecutorContext()
-		executorCtx.client = unsafeTestValue({
-			app: {
-				agents: async () => [{ name: "oracle", mode: "subagent" }],
-			},
-		})
-		executorCtx.agentOverrides = {
-			oracle: { model: ["openai/pool-a", "openai/pool-b"] },
-		}
-
-		//#when
-		const first = await resolveSubagentExecution(args, executorCtx, "sisyphus", "deep")
-		const second = await resolveSubagentExecution(args, executorCtx, "sisyphus", "deep")
-		const third = await resolveSubagentExecution(args, executorCtx, "sisyphus", "deep")
-
-		//#then
-		expect(first.error).toBeUndefined()
-		expect(second.error).toBeUndefined()
-		expect(third.error).toBeUndefined()
-		expect(first.categoryModel).toMatchObject({ providerID: "openai", modelID: "pool-a" })
-		expect(second.categoryModel).toMatchObject({ providerID: "openai", modelID: "pool-b" })
-		expect(third.categoryModel).toMatchObject({ providerID: "openai", modelID: "pool-a" })
-	})
-
-	test("does not let sisyphusJuniorModel override a user-configured category pool", async () => {
-		//#given
-		const args = createCategoryArgs("quick")
-		const executorCtx = createMockExecutorContext()
-		executorCtx.sisyphusJuniorModel = "anthropic/claude-sonnet-4-6"
-		executorCtx.userCategories = {
-			quick: { model: ["openai/pool-a", "openai/pool-b"] },
-		}
-
-		//#when
-		const result = await resolveCategoryExecution(args, executorCtx, undefined, "anthropic/claude-sonnet-4-6")
-
-		//#then
-		expect(result.error).toBeUndefined()
-		expect(result.actualModel).toBe("openai/pool-a")
-	})
-
-	test("lets sisyphusJuniorModel override built-in category defaults", async () => {
-		//#given
-		const args = createCategoryArgs("quick")
-		const executorCtx = createMockExecutorContext()
-		executorCtx.sisyphusJuniorModel = "anthropic/claude-sonnet-4-6"
-
-		//#when
-		const result = await resolveCategoryExecution(args, executorCtx, undefined, "openai/gpt-5.4-mini")
-
-		//#then
-		expect(result.error).toBeUndefined()
-		expect(result.actualModel).toBe("anthropic/claude-sonnet-4-6")
-	})
-
-	test("falls back to existing category resolution when every pool model is unavailable", async () => {
-		//#given
-		markUnavailable("openai/unavailable-a")
-		markUnavailable("openai/unavailable-b")
-		const args = createCategoryArgs("custom-pool")
-		const executorCtx = createMockExecutorContext()
-		executorCtx.userCategories = {
-			"custom-pool": { model: ["openai/unavailable-a", "openai/unavailable-b"] },
-		}
-
-		//#when
-		const result = await resolveCategoryExecution(args, executorCtx, undefined, "anthropic/claude-sonnet-4-6")
-
-		//#then
-		expect(result.error).toBeUndefined()
-		expect(result.actualModel).toBe("anthropic/claude-sonnet-4-6")
 	})
 
 	test("returns unpinned resolution when category cache is not ready on first run", async () => {

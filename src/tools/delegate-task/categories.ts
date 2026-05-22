@@ -8,7 +8,6 @@ import { log } from "../../shared/logger"
 import { isModelAvailable as isPoolModelAvailable, nextModel } from "../../shared/model-pool-state"
 import { appendModelSelectionEvent, createModelSelectionEvent } from "./model-selection-events"
 
-
 function recordCategoryModelSelection(categoryName: string, candidatePool: string[], selectedModel: string, selectionReason: string): void {
   try {
     appendModelSelectionEvent(createModelSelectionEvent({
@@ -39,6 +38,32 @@ function selectCategoryPoolModel(categoryName: string, pool: string[], selection
   return selectedModel
 }
 
+function resolveConfiguredCategoryModel(
+  categoryName: string,
+  configuredModel: string | string[] | undefined,
+  selectionReason: string,
+): string | undefined {
+  if (Array.isArray(configuredModel)) {
+    return selectCategoryPoolModel(categoryName, configuredModel, selectionReason)
+  }
+
+  if (typeof configuredModel === "string" && configuredModel.trim().length > 0) {
+    return configuredModel
+  }
+
+  return undefined
+}
+
+function buildCategoryPromptAppend(defaultPromptAppend: string, userPromptAppend: string | undefined): string {
+  if (!userPromptAppend) {
+    return defaultPromptAppend
+  }
+
+  return defaultPromptAppend
+    ? `${defaultPromptAppend}\n\n${userPromptAppend}`
+    : userPromptAppend
+}
+
 export interface ResolveCategoryConfigOptions {
   userCategories?: CategoriesConfig
   inheritedModel?: string
@@ -51,28 +76,6 @@ export interface ResolveCategoryConfigResult {
   promptAppend: string
   model: string | undefined
   isUserConfiguredModel: boolean
-}
-
-function getConfiguredCategoryModel(
-  configuredModel: string | string[] | undefined,
-  poolSelection?: {
-    categoryName: string
-    selectionReason: string
-  },
-): string | string[] | undefined {
-  if (Array.isArray(configuredModel)) {
-    if (poolSelection) {
-      return selectCategoryPoolModel(poolSelection.categoryName, configuredModel, poolSelection.selectionReason)
-    }
-
-    return configuredModel
-  }
-
-  if (typeof configuredModel === "string" && configuredModel.trim().length > 0) {
-    return configuredModel
-  }
-
-  return undefined
 }
 
 /**
@@ -108,14 +111,16 @@ export function resolveCategoryConfig(
 
   // Model priority for categories: user override > category default > system default.
   // Categories have explicit models - no inheritance from parent session.
-  const userModel = getConfiguredCategoryModel(userConfig?.model, {
+  const userModel = resolveConfiguredCategoryModel(
     categoryName,
-    selectionReason: "round-robin selected configured category model pool entry",
-  })
-  const defaultModel = getConfiguredCategoryModel(defaultConfig?.model, {
+    userConfig?.model,
+    "round-robin selected configured category model pool entry",
+  )
+  const defaultModel = resolveConfiguredCategoryModel(
     categoryName,
-    selectionReason: "round-robin selected default category model pool entry",
-  })
+    defaultConfig?.model,
+    "round-robin selected default category model pool entry",
+  )
   const model = resolveModel({
     userModel,
     inheritedModel: defaultModel, // Category's built-in model takes precedence over system default
@@ -129,12 +134,7 @@ export function resolveCategoryConfig(
     variant: userConfig?.variant ?? defaultConfig?.variant,
   }
 
-  let promptAppend = defaultPromptAppend
-  if (userConfig?.prompt_append) {
-    promptAppend = defaultPromptAppend
-      ? defaultPromptAppend + "\n\n" + userConfig.prompt_append
-      : userConfig.prompt_append
-  }
+  const promptAppend = buildCategoryPromptAppend(defaultPromptAppend, userConfig?.prompt_append)
 
   return { config, promptAppend, model, isUserConfiguredModel }
 }
