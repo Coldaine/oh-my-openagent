@@ -5,7 +5,7 @@ description: Developer reference for the Atlas todo-list orchestrator agent -- m
 
 # src/agents/atlas/ -- Todo-List Orchestrator
 
-**Generated:** 2026-05-18
+**Generated:** 2026-05-22
 
 ## OVERVIEW
 
