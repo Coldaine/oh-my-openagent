@@ -28,6 +28,7 @@ export type ModelResolutionRequest = {
   intent?: {
     uiSelectedModel?: string
     userModel?: string
+    agentName?: string
     userFallbackModels?: string[]
     categoryDefaultModel?: string
   }
