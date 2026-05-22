@@ -7,7 +7,7 @@ const FREE_OR_LOCAL_PROMPT_TOKEN_LIMIT = 24000
 
 const INTENT_CHECK_PREAMBLE = `<intent_check>
 Before executing the caller's request, briefly check: is the literal request asking for the right thing? If the actual need differs from the literal ask, note the gap and address the actual need. If uncertain, state your interpretation and proceed.
-</intent_check>
+</intent_check>`
 
 const KNOWLEDGE_TRUST_PREAMBLE = `<knowledge_trust>
 ## Knowledge Source Trust Hierarchy
