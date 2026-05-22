@@ -3,6 +3,7 @@ const { describe, test, expect, beforeEach, afterEach, spyOn, mock } = require("
 import { resolveCategoryExecution } from "./category-resolver"
 import type { ExecutorContext } from "./executor-types"
 import * as connectedProvidersCache from "../../shared/connected-providers-cache"
+import { resetAllPoolState } from "../../shared/model-pool-state"
 import { unsafeTestValue } from "../../../test-support/unsafe-test-value"
 
 describe("resolveCategoryExecution", () => {
@@ -13,6 +14,7 @@ describe("resolveCategoryExecution", () => {
 
 	beforeEach(() => {
 		mock.restore()
+		resetAllPoolState()
 		connectedProvidersSpy = spyOn(connectedProvidersCache, "readConnectedProvidersCache").mockReturnValue(null)
 		providerModelsSpy = spyOn(connectedProvidersCache, "readProviderModelsCache").mockReturnValue(null)
 		hasConnectedProvidersSpy = spyOn(connectedProvidersCache, "hasConnectedProvidersCache").mockReturnValue(false)
@@ -204,6 +206,37 @@ describe("resolveCategoryExecution", () => {
 			modelID: "gpt-5.4",
 			variant: "high",
 		})
+	})
+
+	test("rotates user-configured category model pools across executions", async () => {
+		//#given
+		const args = {
+			category: "quick",
+			prompt: "test prompt",
+			description: "Test task",
+			run_in_background: false,
+			load_skills: [],
+			blockedBy: undefined,
+			enableSkillTools: false,
+		}
+		const executorCtx = createMockExecutorContext()
+		executorCtx.userCategories = {
+			quick: {
+				model: ["openai/gpt-5.4", "anthropic/claude-sonnet-4-6"],
+			},
+		}
+
+		//#when
+		const first = await resolveCategoryExecution(args, executorCtx, undefined, "anthropic/claude-sonnet-4-6")
+		const second = await resolveCategoryExecution(args, executorCtx, undefined, "anthropic/claude-sonnet-4-6")
+
+		//#then
+		expect(first.error).toBeUndefined()
+		expect(first.categoryModel).toEqual({ providerID: "openai", modelID: "gpt-5.4" })
+		expect(first.actualModel).toBe("openai/gpt-5.4")
+		expect(second.error).toBeUndefined()
+		expect(second.categoryModel).toEqual({ providerID: "anthropic", modelID: "claude-sonnet-4-6" })
+		expect(second.actualModel).toBe("anthropic/claude-sonnet-4-6")
 	})
 
 	test("does not apply object-style fallback settings when the configured primary model matches directly", async () => {

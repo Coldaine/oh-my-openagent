@@ -1,7 +1,12 @@
-import { describe, expect, test } from "bun:test"
+import { beforeEach, describe, expect, test } from "bun:test"
 import { resolveModelPipeline } from "./model-resolution-pipeline"
+import { resetAllPoolState } from "./model-pool-state"
 
 describe("resolveModelPipeline", () => {
+  beforeEach(() => {
+    resetAllPoolState()
+  })
+
   test("does not return unused explicit user config metadata in override result", () => {
     // given
     const result = resolveModelPipeline({
@@ -80,4 +85,32 @@ describe("resolveModelPipeline", () => {
     expect(result?.provenance).toBe("override")
   })
 
+  test("rotates category model pools by category name", () => {
+    //#given
+    const pool = ["openai/gpt-5.4-mini", "anthropic/claude-sonnet-4-6"]
+
+    //#when
+    const first = resolveModelPipeline({
+      intent: {
+        categoryDefaultModel: pool,
+        categoryName: "quick",
+      },
+      constraints: {
+        availableModels: new Set<string>(),
+      },
+    })
+    const second = resolveModelPipeline({
+      intent: {
+        categoryDefaultModel: pool,
+        categoryName: "quick",
+      },
+      constraints: {
+        availableModels: new Set<string>(),
+      },
+    })
+
+    //#then
+    expect(first?.model).toBe("openai/gpt-5.4-mini")
+    expect(second?.model).toBe("anthropic/claude-sonnet-4-6")
+  })
 })

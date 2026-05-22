@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test"
 import type { DelegateTaskArgs } from "../types"
 import type { ExecutorContext } from "../executor-types"
+import { resetAllPoolState } from "../../../shared/model-pool-state"
 
 type SubagentResolverModule = typeof import("../subagent-resolver")
 
@@ -66,6 +67,7 @@ describe("resolveSubagentExecution", () => {
 
   beforeEach(async () => {
     mock.restore()
+    resetAllPoolState()
     logMock.mockClear()
     readConnectedProvidersCacheMock.mockReset()
     readProviderModelsCacheMock.mockReset()
@@ -739,6 +741,38 @@ describe("resolveSubagentExecution", () => {
     expect(result.fallbackChain).toEqual([
       { providers: ["anthropic"], model: "claude-haiku-4-5", variant: undefined },
     ])
+  })
+
+  test("rotates category model pools when agent override points at category", async () => {
+    //#given
+    const args = createBaseArgs({ subagent_type: "explore" })
+    const executorCtx = createExecutorContext(
+      async () => ([
+        { name: "explore", mode: "subagent", model: "quotio/claude-haiku-4-5" },
+      ]),
+      {
+        agentOverrides: {
+          explore: {
+            category: "research",
+          },
+        } as ExecutorContext["agentOverrides"],
+        userCategories: {
+          research: {
+            model: ["openai/gpt-5.4", "anthropic/claude-sonnet-4-6"],
+          },
+        } as ExecutorContext["userCategories"],
+      }
+    )
+
+    //#when
+    const first = await resolveSubagentExecution(args, executorCtx, "sisyphus", "deep")
+    const second = await resolveSubagentExecution(args, executorCtx, "sisyphus", "deep")
+
+    //#then
+    expect(first.error).toBeUndefined()
+    expect(first.categoryModel).toEqual({ providerID: "openai", modelID: "gpt-5.4" })
+    expect(second.error).toBeUndefined()
+    expect(second.categoryModel).toEqual({ providerID: "anthropic", modelID: "claude-sonnet-4-6" })
   })
 
   test("promotes object-style fallback model settings to categoryModel when subagent fallback becomes initial model", async () => {

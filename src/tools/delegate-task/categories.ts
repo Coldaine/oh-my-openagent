@@ -1,8 +1,6 @@
 import type { CategoryConfig, CategoriesConfig } from "../../config/schema"
 import { DEFAULT_CATEGORIES, CATEGORY_PROMPT_APPENDS } from "./constants"
-import { resolveModel } from "../../shared/model-resolver"
 import { isModelAvailable } from "../../shared/model-availability"
-import { normalizeModel } from "../../shared/model-normalization"
 import { CATEGORY_MODEL_REQUIREMENTS } from "../../shared/model-requirements"
 import { log } from "../../shared/logger"
 
@@ -16,7 +14,7 @@ export interface ResolveCategoryConfigOptions {
 export interface ResolveCategoryConfigResult {
   config: CategoryConfig
   promptAppend: string
-  model: string | undefined
+  model: string | string[] | undefined
   isUserConfiguredModel: boolean
 }
 
@@ -51,14 +49,11 @@ export function resolveCategoryConfig(
     return null
   }
 
-  // Model priority for categories: user override > category default > system default
-  // Categories have explicit models - no inheritance from parent session
-  const model = resolveModel({
-    userModel: userConfig?.model,
-    inheritedModel: defaultConfig?.model, // Category's built-in model takes precedence over system default
-    systemDefault: systemDefaultModel,
-  })
-  const isUserConfiguredModel = normalizeModel(userConfig?.model) !== undefined
+  // Model priority for categories: user override > category default > system default.
+  // Pools remain unresolved here so category execution can apply round-robin selection
+  // with the actual category scope.
+  const model = userConfig?.model ?? defaultConfig?.model ?? systemDefaultModel
+  const isUserConfiguredModel = userConfig?.model !== undefined
   const config: CategoryConfig = {
     ...defaultConfig,
     ...userConfig,

@@ -14,10 +14,12 @@ describe("AgentOverrideConfigSchema", () => {
 		})
 
 		describe("#when model is an array of strings", () => {
-			test("#then parses successfully", () => {
-				const result = AgentOverrideConfigSchema.parse({ model: ["openai/gpt-5.5", "anthropic/claude-opus-4-7"] })
+			test("#then rejects the config", () => {
+				const result = AgentOverrideConfigSchema.safeParse({
+					model: ["openai/gpt-5.5", "anthropic/claude-opus-4-7"],
+				})
 
-				expect(result.model).toEqual(["openai/gpt-5.5", "anthropic/claude-opus-4-7"])
+				expect(result.success).toBe(false)
 			})
 		})
 
