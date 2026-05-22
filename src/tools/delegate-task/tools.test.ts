@@ -10,6 +10,7 @@ import { __setTimingConfig, __resetTimingConfig } from "./timing"
 import * as connectedProvidersCache from "../../shared/connected-providers-cache"
 import * as executor from "./executor"
 import { releaseAllPromptAsyncReservationsForTesting } from "../../shared/prompt-async-gate"
+import { resetCounter } from "../../shared/model-pool-state"
 
 const runtimeRequire = require as NodeJS.Require & { cache?: Record<string, unknown> }
 
@@ -55,6 +56,7 @@ describe("sisyphus-task", () => {
     mock.restore()
     clearRequireCache("./tools")
     __resetModelCache()
+    resetCounter()
     clearSkillCache()
     __setTimingConfig({
       POLL_INTERVAL_MS: 10,
@@ -1178,6 +1180,164 @@ describe("sisyphus-task", () => {
       expect(promptBody.variant).toBe("max")
     }, { timeout: 20000 })
   })
+
+
+
+  describe("model pool launch payloads", () => {
+    test("model pool background payload receives one selected model object, not the pool array", async () => {
+      //#given
+      resetCounter()
+      const { createDelegateTask } = require("./tools")
+      let launchInput: any
+      const mockManager = {
+        launch: async (input: any) => {
+          launchInput = input
+          return {
+            id: "task-model-pool-bg",
+            sessionId: "ses_model_pool_bg",
+            description: "Pool background",
+            agent: "sisyphus-junior",
+            status: "running",
+          }
+        },
+      }
+      const mockClient = {
+        app: { agents: async () => ({ data: [] }) },
+        config: { get: async () => ({ data: { model: SYSTEM_DEFAULT_MODEL } }) },
+        session: {
+          create: async () => ({ data: { id: "ses_model_pool_bg" } }),
+          prompt: async () => ({ data: {} }),
+          promptAsync: async () => ({ data: {} }),
+          messages: async () => ({ data: [] }),
+        },
+      }
+      const tool = createDelegateTask({
+        manager: mockManager,
+        client: mockClient,
+        userCategories: {
+          "model-pool-bg": { model: ["openai/gpt-5.4-mini", "openai/gpt-5.5"] },
+        },
+        connectedProvidersOverride: TEST_CONNECTED_PROVIDERS,
+        availableModelsOverride: createTestAvailableModels(),
+      })
+
+      //#when
+      await tool.execute(
+        {
+          description: "Pool background",
+          prompt: "Use the pool in background mode",
+          category: "model-pool-bg",
+          run_in_background: true,
+          load_skills: [],
+        },
+        { sessionID: "parent-session", messageID: "parent-message", agent: "sisyphus", abort: new AbortController().signal }
+      )
+
+      //#then
+      expect(Array.isArray(launchInput.model)).toBe(false)
+      expect(launchInput.model).toEqual({ providerID: "openai", modelID: "gpt-5.4-mini" })
+    }, { timeout: 10000 })
+
+    test("model pool sync payload receives one selected model object, not the pool array", async () => {
+      //#given
+      resetCounter()
+      const { createDelegateTask } = require("./tools")
+      let promptBody: any
+      const mockManager = { launch: async () => ({}) }
+      const promptMock = async (input: any) => {
+        promptBody = input.body
+        return { data: {} }
+      }
+      const mockClient = {
+        app: { agents: async () => ({ data: [] }) },
+        config: { get: async () => ({ data: { model: SYSTEM_DEFAULT_MODEL } }) },
+        session: {
+          get: async () => ({ data: { directory: "/project" } }),
+          create: async () => ({ data: { id: "ses_model_pool_sync" } }),
+          prompt: promptMock,
+          promptAsync: promptMock,
+          messages: async () => ({ data: [{ info: { role: "assistant" }, parts: [{ type: "text", text: "Done" }] }] }),
+          status: async () => ({ data: { ses_model_pool_sync: { type: "idle" } } }),
+        },
+      }
+      const tool = createDelegateTask({
+        manager: mockManager,
+        client: mockClient,
+        userCategories: {
+          "model-pool-sync": { model: ["openai/gpt-5.4-mini", "openai/gpt-5.5"] },
+        },
+        connectedProvidersOverride: TEST_CONNECTED_PROVIDERS,
+        availableModelsOverride: createTestAvailableModels(),
+      })
+
+      //#when
+      await tool.execute(
+        {
+          description: "Pool sync",
+          prompt: "Use the pool in sync mode",
+          category: "model-pool-sync",
+          run_in_background: false,
+          load_skills: [],
+        },
+        { sessionID: "parent-session", messageID: "parent-message", agent: "sisyphus", abort: new AbortController().signal }
+      )
+
+      //#then
+      expect(Array.isArray(promptBody.model)).toBe(false)
+      expect(promptBody.model).toEqual({ providerID: "openai", modelID: "gpt-5.4-mini" })
+    }, { timeout: 20000 })
+
+    test("model pool category config rotates to a single selected model string before launch", async () => {
+      //#given
+      resetCounter()
+      const { createDelegateTask } = require("./tools")
+      const launchModels: unknown[] = []
+      const mockManager = {
+        launch: async (input: any) => {
+          launchModels.push(input.model)
+          return {
+            id: `task-model-pool-${launchModels.length}`,
+            sessionId: `ses_model_pool_${launchModels.length}`,
+            description: "Pool rotation",
+            agent: "sisyphus-junior",
+            status: "running",
+          }
+        },
+      }
+      const mockClient = {
+        app: { agents: async () => ({ data: [] }) },
+        config: { get: async () => ({ data: { model: SYSTEM_DEFAULT_MODEL } }) },
+        session: {
+          create: async () => ({ data: { id: "ses_model_pool" } }),
+          prompt: async () => ({ data: {} }),
+          promptAsync: async () => ({ data: {} }),
+          messages: async () => ({ data: [] }),
+        },
+      }
+      const tool = createDelegateTask({
+        manager: mockManager,
+        client: mockClient,
+        userCategories: {
+          "model-pool-rotation": { model: ["openai/gpt-5.4-mini", "openai/gpt-5.5"] },
+        },
+        connectedProvidersOverride: TEST_CONNECTED_PROVIDERS,
+        availableModelsOverride: createTestAvailableModels(),
+      })
+      const toolContext = { sessionID: "parent-session", messageID: "parent-message", agent: "sisyphus", abort: new AbortController().signal }
+
+      //#when
+      await tool.execute({ description: "Pool rotation one", prompt: "one", category: "model-pool-rotation", run_in_background: true, load_skills: [] }, toolContext)
+      await tool.execute({ description: "Pool rotation two", prompt: "two", category: "model-pool-rotation", run_in_background: true, load_skills: [] }, toolContext)
+
+      //#then
+      expect(launchModels).toEqual([
+        { providerID: "openai", modelID: "gpt-5.4-mini" },
+        { providerID: "openai", modelID: "gpt-5.5" },
+      ])
+      expect(launchModels.every((model) => !Array.isArray(model))).toBe(true)
+    }, { timeout: 10000 })
+  })
+
 
   describe("skills parameter", () => {
     test("skills parameter is required - throws error when not provided", async () => {

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test"
 import type { DelegateTaskArgs } from "../types"
 import type { ExecutorContext } from "../executor-types"
-import { resetAllPoolState } from "../../../shared/model-pool-state"
+import { resetAllPoolState, resetCounter } from "../../../shared/model-pool-state"
 
 type SubagentResolverModule = typeof import("../subagent-resolver")
 
@@ -22,7 +22,7 @@ type ClaudeCodeAgentRecord = Record<
     description?: string
     mode?: string
     prompt?: string
-    model?: string | { providerID: string; modelID: string }
+    model?: string | string[] | { providerID: string; modelID: string }
   }
 >
 
@@ -659,6 +659,100 @@ describe("resolveSubagentExecution", () => {
     expect(result.error).toBeUndefined()
     expect(result.categoryModel).toEqual({ providerID: "openai", modelID: "gpt-5.3-codex" })
   })
+
+
+
+  test("direct agent pool selects m1, then m2, then m1 across three launches", async () => {
+    //#given
+    resetAllPoolState()
+    readProviderModelsCacheMock.mockReturnValue({
+      models: { openai: ["gpt-5.4-mini", "gpt-5.5"] },
+      connected: ["openai"],
+      updatedAt: "2026-03-03T00:00:00.000Z",
+    })
+    const args = createBaseArgs({ subagent_type: "oracle" })
+    const executorCtx = createExecutorContext(
+      async () => ([{ name: "oracle", mode: "subagent" }]),
+      {
+        agentOverrides: {
+          oracle: { model: ["openai/gpt-5.4-mini", "openai/gpt-5.5"] },
+        } as ExecutorContext["agentOverrides"],
+      }
+    )
+
+    //#when
+    const first = await resolveSubagentExecution(args, executorCtx, "sisyphus", "deep")
+    const second = await resolveSubagentExecution(args, executorCtx, "sisyphus", "deep")
+    const third = await resolveSubagentExecution(args, executorCtx, "sisyphus", "deep")
+
+    //#then
+    expect(first.categoryModel).toEqual({ providerID: "openai", modelID: "gpt-5.4-mini" })
+    expect(second.categoryModel).toEqual({ providerID: "openai", modelID: "gpt-5.5" })
+    expect(third.categoryModel).toEqual({ providerID: "openai", modelID: "gpt-5.4-mini" })
+  })
+
+  test("direct agent pool takes precedence over category model for initial selection", async () => {
+    //#given
+    resetAllPoolState()
+    readProviderModelsCacheMock.mockReturnValue({
+      models: { openai: ["gpt-5.4-mini"], anthropic: ["claude-opus-4-7"] },
+      connected: ["openai", "anthropic"],
+      updatedAt: "2026-03-03T00:00:00.000Z",
+    })
+    const args = createBaseArgs({ subagent_type: "oracle" })
+    const executorCtx = createExecutorContext(
+      async () => ([{ name: "oracle", mode: "subagent", model: "anthropic/claude-opus-4-7" }]),
+      {
+        agentOverrides: {
+          oracle: {
+            category: "review-category",
+            model: ["openai/gpt-5.4-mini"],
+          },
+        } as ExecutorContext["agentOverrides"],
+        userCategories: {
+          "review-category": { model: "anthropic/claude-opus-4-7" },
+        } as ExecutorContext["userCategories"],
+      }
+    )
+
+    //#when
+    const result = await resolveSubagentExecution(args, executorCtx, "sisyphus", "deep")
+
+    //#then
+    expect(result.error).toBeUndefined()
+    expect(result.categoryModel).toEqual({ providerID: "openai", modelID: "gpt-5.4-mini" })
+  })
+
+  test("category-inherited model pool resolves through the pool for direct agents", async () => {
+    //#given
+    resetAllPoolState()
+    readProviderModelsCacheMock.mockReturnValue({
+      models: { openai: ["gpt-5.4-mini", "gpt-5.5"] },
+      connected: ["openai"],
+      updatedAt: "2026-03-03T00:00:00.000Z",
+    })
+    const args = createBaseArgs({ subagent_type: "oracle" })
+    const executorCtx = createExecutorContext(
+      async () => ([{ name: "oracle", mode: "subagent" }]),
+      {
+        agentOverrides: {
+          oracle: { category: "review-category" },
+        } as ExecutorContext["agentOverrides"],
+        userCategories: {
+          "review-category": { model: ["openai/gpt-5.4-mini", "openai/gpt-5.5"] },
+        } as ExecutorContext["userCategories"],
+      }
+    )
+
+    //#when
+    const first = await resolveSubagentExecution(args, executorCtx, "sisyphus", "deep")
+    const second = await resolveSubagentExecution(args, executorCtx, "sisyphus", "deep")
+
+    //#then
+    expect(first.categoryModel).toEqual({ providerID: "openai", modelID: "gpt-5.4-mini" })
+    expect(second.categoryModel).toEqual({ providerID: "openai", modelID: "gpt-5.5" })
+  })
+
 
   test("matches agents even when zero-width characters are present in the requested name", async () => {
     //#given
@@ -1337,6 +1431,7 @@ describe("resolveSubagentExecution - agent name sanitization", () => {
 
   beforeEach(async () => {
     mock.restore()
+    resetCounter()
     logMock.mockClear()
     readConnectedProvidersCacheMock.mockReset()
     readProviderModelsCacheMock.mockReset()

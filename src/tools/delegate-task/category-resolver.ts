@@ -9,7 +9,6 @@ import { CATEGORY_PROMPT_APPEND_RESOLVERS } from "./constants"
 import { parseModelString } from "../../shared/model-string-parser"
 import { CATEGORY_MODEL_REQUIREMENTS } from "../../shared/model-requirements"
 import { normalizeFallbackModels, flattenToFallbackModelStrings } from "../../shared/model-resolver"
-import { nextModel } from "../../shared/model-pool-state"
 import { buildFallbackChainFromModels, findMostSpecificFallbackEntry } from "../../shared/fallback-chain-from-models"
 import { CONFIG_BASENAME } from "../../shared/plugin-identity"
 import { getAvailableModelsForDelegateTask } from "./available-models"
@@ -55,17 +54,6 @@ export interface CategoryResolutionResult {
   isUnstableAgent: boolean
   fallbackChain?: FallbackEntry[]  // For runtime retry on model errors
   error?: string
-}
-
-function selectCategoryModel(
-  model: string | string[] | undefined,
-  categoryName: string,
-): string | undefined {
-  if (Array.isArray(model)) {
-    return nextModel("category", categoryName, model)
-  }
-
-  return model
 }
 
 export async function resolveCategoryExecution(
@@ -148,10 +136,8 @@ Available categories: ${allCategoryNames}`,
   let matchedFallback = false
 
   const overrideModel = sisyphusJuniorModel
-  const explicitCategoryModel = selectCategoryModel(userCategories?.[args.category!]?.model, args.category!)
-  const resolvedCategoryDefaultModel = resolved.isUserConfiguredModel
-    ? undefined
-    : selectCategoryModel(resolved.model, args.category!)
+  const explicitCategoryModel = resolved.isUserConfiguredModel ? resolved.model : undefined
+  const resolvedCategoryDefaultModel = resolved.isUserConfiguredModel ? undefined : resolved.model
 
   if (!requirement) {
     // Precedence: explicit category model > sisyphus-junior default > category resolved model
