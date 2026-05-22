@@ -3282,7 +3282,7 @@ describe("sisyphus-task", () => {
   })
 
   describe("buildSystemContent", () => {
-    test("returns undefined when no skills and no category promptAppend", () => {
+    test("returns governance preambles when no skills and no category promptAppend", () => {
       // given
       const { buildSystemContent } = require("./tools")
 
@@ -3290,10 +3290,11 @@ describe("sisyphus-task", () => {
       const result = buildSystemContent({ skillContent: undefined, categoryPromptAppend: undefined })
 
       // then
-      expect(result).toBeUndefined()
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
     })
 
-    test("returns skill content only when skills provided without category", () => {
+    test("includes governance preambles when skills are provided without category", () => {
       // given
       const { buildSystemContent } = require("./tools")
       const skillContent = "You are a playwright expert"
@@ -3302,10 +3303,12 @@ describe("sisyphus-task", () => {
       const result = buildSystemContent({ skillContent, categoryPromptAppend: undefined })
 
       // then
-      expect(result).toBe(skillContent)
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
+      expect(result).toContain(skillContent)
     })
 
-    test("returns category promptAppend only when no skills", () => {
+    test("includes governance preambles when only category promptAppend is provided", () => {
       // given
       const { buildSystemContent } = require("./tools")
       const categoryPromptAppend = "Focus on visual design"
@@ -3314,7 +3317,9 @@ describe("sisyphus-task", () => {
       const result = buildSystemContent({ skillContent: undefined, categoryPromptAppend })
 
       // then
-      expect(result).toBe(categoryPromptAppend)
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
+      expect(result).toContain(categoryPromptAppend)
     })
 
     test("combines skill content and category promptAppend with separator", () => {
@@ -3360,12 +3365,14 @@ describe("sisyphus-task", () => {
       })
 
       // then
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
       expect(result).toContain("<system>")
       expect(result).toContain("MANDATORY CONTEXT GATHERING PROTOCOL")
       expect(result).toContain("### AVAILABLE CATEGORIES")
       expect(result).toContain("`deep`")
       expect(result).not.toContain("prompt-engineer")
-      expect(result).toBe(buildPlanAgentSystemPrepend(availableCategories, availableSkills))
+      expect(result).toContain(buildPlanAgentSystemPrepend(availableCategories, availableSkills))
     })
 
     test("does not prepend plan agent prompt for prometheus agent", () => {
@@ -3380,7 +3387,9 @@ describe("sisyphus-task", () => {
       })
 
       //#then - prometheus should NOT get plan agent system prepend
-      expect(result).toBe(skillContent)
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
+      expect(result).toContain(skillContent)
       expect(result).not.toContain("MANDATORY CONTEXT GATHERING PROTOCOL")
     })
 
@@ -3396,7 +3405,9 @@ describe("sisyphus-task", () => {
       })
 
       //#then
-      expect(result).toBe(skillContent)
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
+      expect(result).toContain(skillContent)
       expect(result).not.toContain("MANDATORY CONTEXT GATHERING PROTOCOL")
     })
 
@@ -3431,6 +3442,8 @@ describe("sisyphus-task", () => {
       })
 
       // then
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
       expect(result).toContain(planPrepend)
       expect(result).toContain(skillContent)
       expect(result!.indexOf(planPrepend)).toBeLessThan(result!.indexOf(skillContent))
@@ -3445,7 +3458,9 @@ describe("sisyphus-task", () => {
       const result = buildSystemContent({ skillContent, agentName: "oracle" })
 
       // then
-      expect(result).toBe(skillContent)
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
+      expect(result).toContain(skillContent)
       expect(result).not.toContain("<system>")
     })
 
@@ -3458,7 +3473,9 @@ describe("sisyphus-task", () => {
       const result = buildSystemContent({ skillContent, agentName: undefined })
 
       // then
-      expect(result).toBe(skillContent)
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
+      expect(result).toContain(skillContent)
       expect(result).not.toContain("<system>")
     })
   })
