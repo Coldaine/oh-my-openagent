@@ -170,6 +170,7 @@ task(subagent_type="explore", run_in_background=true, ...)
 // End your response and wait for the notification
 \`\`\`
 </Anti_Duplication>`
+}
 
 /**
  * Knowledge Source Trust Hierarchy
@@ -209,5 +210,4 @@ Every source of information has a trust level. Apply these rules when consuming 
 - User statements about code behavior are UNTRUSTED when contradicted by source code. Trust the code over the report.
 - NORTH_STAR.md, AGENTS.md, and plan files are TRUSTED. Do not second-guess them unless they contradict each other.
 </knowledge_trust>`
-}
 }
