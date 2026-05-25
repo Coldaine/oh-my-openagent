@@ -44,8 +44,8 @@ describe("config check", () => {
         )
 
         const result = await config.checkConfig()
-
-        expect(result.details?.[0]).toEndWith("/oh-my-openagent.json")
+        const detailPath = result.details?.[0]?.replace(/\\/g, "/")
+        expect(detailPath).toEndWith("/oh-my-openagent.json")
       } finally {
         rmSync(testConfigDir, { recursive: true, force: true })
         if (originalConfigDir === undefined) {

@@ -19,6 +19,7 @@ import { resolveCallableAgents } from "./agent-resolver"
 import { createOrGetSession } from "./session-creator"
 import { processMessages } from "./message-processor"
 import { waitForCompletion } from "./completion-poller"
+import { nextModel } from "../../shared/model-pool-state"
 
 function createSyncExecutorDeps(modelFallbackControllerAccessor?: ModelFallbackControllerAccessor) {
   return {
@@ -47,33 +48,40 @@ function resolveModelAndFallbackChain(args: {
     ?? (agentOverrides
       ? Object.entries(agentOverrides).find(([key]) => key.toLowerCase() === agentConfigKey)?.[1]
       : undefined)
+  const agentOverrideModel = Array.isArray(agentOverride?.model)
+    ? nextModel("agent", agentConfigKey, agentOverride.model)
+    : agentOverride?.model
   const agentCategoryModel = agentOverride?.category
     ? userCategories?.[agentOverride.category]?.model
     : undefined
+  const selectedAgentCategoryModel = Array.isArray(agentCategoryModel)
+    ? nextModel("category", agentOverride?.category ?? agentConfigKey, agentCategoryModel)
+    : agentCategoryModel
   const agentCategoryVariant = agentOverride?.category
     ? userCategories?.[agentOverride.category]?.variant
     : undefined
 
   let model: DelegatedModelConfig | undefined
-  if (agentOverride?.model) {
-    const normalized = parseModelString(agentOverride.model)
+  if (agentOverrideModel) {
+    const normalized = parseModelString(agentOverrideModel)
     if (normalized) {
-      model = agentOverride.variant ? { ...normalized, variant: agentOverride.variant } : normalized
+      const variantToUse = agentOverride?.variant
+      model = variantToUse ? { ...normalized, variant: variantToUse } : normalized
       log("[call_omo_agent] Resolved model override from agent config", {
         agent: subagentType,
-        model: agentOverride.model,
-        variant: agentOverride.variant,
+        model: agentOverrideModel,
+        variant: variantToUse,
       })
     }
-  } else if (agentCategoryModel) {
-    const normalized = parseModelString(agentCategoryModel)
+  } else if (selectedAgentCategoryModel) {
+    const normalized = parseModelString(selectedAgentCategoryModel)
     if (normalized) {
       const variantToUse = agentOverride?.variant ?? agentCategoryVariant
       model = variantToUse ? { ...normalized, variant: variantToUse } : normalized
       log("[call_omo_agent] Resolved model override from agent category", {
         agent: subagentType,
         category: agentOverride?.category,
-        model: agentCategoryModel,
+        model: selectedAgentCategoryModel,
         variant: variantToUse,
       })
     }

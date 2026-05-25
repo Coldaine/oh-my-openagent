@@ -226,6 +226,11 @@ export const AGENT_ELIGIBILITY_REGISTRY: Readonly<Record<string, {
       "Agent 'momus' is read-only (plan reviewer). Cannot write to mailbox as team member. Use delegate-task for plan review instead.",
   },
   atlas: { verdict: "eligible" },
+  telamon: {
+    verdict: "hard-reject",
+    rejectionMessage:
+      "Agent 'telamon' is read-only (purpose-fitness reviewer). Cannot write to mailbox as team member. Use delegate-task for plan purpose validation instead.",
+  },
   prometheus: {
     verdict: "hard-reject",
     rejectionMessage:

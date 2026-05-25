@@ -1,16 +1,16 @@
 # team-mode — Parallel Multi-Agent Coordination
 
-**Generated:** 2026-05-15
+**Generated:** 2026-05-25
 
 ## OVERVIEW
 
 Spawns coordinated agent teams with shared mailbox, task list, optional tmux layout, and graceful lifecycle. Modeled after Claude Code Agent Teams. **OFF by default.** Enable via `team_mode.enabled` in `oh-my-opencode.jsonc`; restart OpenCode after enabling.
 
-User docs: [`docs/guide/team-mode.md`](file:///Users/yeongyu/local-workspaces/omo/docs/guide/team-mode.md).
+User docs: [`docs/guide/team-mode.md`](docs/guide/team-mode.md).
 
 ## CONFIG
 
-Full schema: [`src/config/schema/team-mode.ts`](file:///Users/yeongyu/local-workspaces/omo/src/config/schema/team-mode.ts).
+Full schema: [`src/config/schema/team-mode.ts`](src/config/schema/team-mode.ts).
 
 ```jsonc
 {
@@ -32,7 +32,7 @@ Full schema: [`src/config/schema/team-mode.ts`](file:///Users/yeongyu/local-work
 
 ## 12 TEAM_* TOOLS
 
-Registered via [`src/plugin/tool-registry.ts`](file:///Users/yeongyu/local-workspaces/omo/src/plugin/tool-registry.ts) `teamModeToolsRecord` only when enabled.
+Registered via [`src/plugin/tool-registry.ts`](src/plugin/tool-registry.ts) `teamModeToolsRecord` only when enabled.
 
 | Tool | Source File | Purpose |
 |------|-------------|---------|
@@ -51,13 +51,13 @@ Registered via [`src/plugin/tool-registry.ts`](file:///Users/yeongyu/local-works
 
 ## ELIGIBLE AGENTS
 
-[`AGENT_ELIGIBILITY_REGISTRY`](file:///Users/yeongyu/local-workspaces/omo/src/features/team-mode/types.ts) in `types.ts` — three verdict tiers, each with its own rejection message:
+[`AGENT_ELIGIBILITY_REGISTRY`](src/features/team-mode/types.ts) in `types.ts` — three verdict tiers, each with its own rejection message:
 
 | Verdict | Agents | Notes |
 |---------|--------|-------|
 | `eligible` | sisyphus, atlas, sisyphus-junior | Three only |
 | `conditional` | hephaestus | Lacks `teammate: "allow"` permission by default. Either apply D-36 patch (add `teammate: "allow"` in `tool-config-handler.ts`) or use `subagent_type: "sisyphus"` instead |
-| `hard-reject` | oracle, librarian, explore, multimodal-looker, metis, momus, prometheus | Read-only or plan-mode-only — cannot write to mailbox; use `task` (delegate-task) instead |
+| `hard-reject` | oracle, librarian, explore, multimodal-looker, metis, momus, prometheus, telamon | Read-only or plan-mode-only — cannot write to mailbox; use `task` (delegate-task) instead |
 
 Hard-reject agents throw at TeamSpec parse with a specific message ("Agent 'X' is read-only…"). The error message points members at delegate-task as the right escape hatch.
 
@@ -138,19 +138,19 @@ team-mode/
 
 | Where | What |
 |-------|------|
-| [`src/index.ts`](file:///Users/yeongyu/local-workspaces/omo/src/index.ts) (entry) | `checkTeamModeDependencies()` + `ensureBaseDirs()` if `team_mode.enabled` |
-| [`src/plugin/tool-registry.ts`](file:///Users/yeongyu/local-workspaces/omo/src/plugin/tool-registry.ts) `teamModeToolsRecord` | Registers 12 `team_*` tools |
-| [`create-transform-hooks.ts`](file:///Users/yeongyu/local-workspaces/omo/src/plugin/hooks/create-transform-hooks.ts) | Conditionally builds `teamModeStatusInjector` (`team-mode-status-injector` hook) and `teamMailboxInjector` (`team-mailbox-injector` hook) — both Transform tier |
-| [`create-tool-guard-hooks.ts`](file:///Users/yeongyu/local-workspaces/omo/src/plugin/hooks/create-tool-guard-hooks.ts) | Conditionally builds `teamToolGating` (`team-tool-gating` hook) — Tool Guard tier |
-| [`src/plugin/event.ts`](file:///Users/yeongyu/local-workspaces/omo/src/plugin/event.ts) | Registers 4 team-session-event handlers from `src/hooks/team-session-events/`: `team-idle-wake-hint`, `team-lead-orphan-handler`, `team-member-error-handler`, `team-member-status-handler` |
-| [`src/cli/doctor/checks/team-mode.ts`](file:///Users/yeongyu/local-workspaces/omo/src/cli/doctor/checks/team-mode.ts) | Doctor check for team-mode prerequisites |
-| [`src/features/builtin-skills/skills/team-mode.ts`](file:///Users/yeongyu/local-workspaces/omo/src/features/builtin-skills/skills/team-mode.ts) | Built-in skill documenting the 12 tools — gated on `team_mode.enabled` |
+| [`src/index.ts`](src/index.ts) (entry) | `checkTeamModeDependencies()` + `ensureBaseDirs()` if `team_mode.enabled` |
+| [`src/plugin/tool-registry.ts`](src/plugin/tool-registry.ts) `teamModeToolsRecord` | Registers 12 `team_*` tools |
+| [`create-transform-hooks.ts`](src/plugin/hooks/create-transform-hooks.ts) | Conditionally builds `teamModeStatusInjector` (`team-mode-status-injector` hook) and `teamMailboxInjector` (`team-mailbox-injector` hook) — both Transform tier |
+| [`create-tool-guard-hooks.ts`](src/plugin/hooks/create-tool-guard-hooks.ts) | Conditionally builds `teamToolGating` (`team-tool-gating` hook) — Tool Guard tier |
+| [`src/plugin/event.ts`](src/plugin/event.ts) | Registers 4 team-session-event handlers from `src/hooks/team-session-events/`: `team-idle-wake-hint`, `team-lead-orphan-handler`, `team-member-error-handler`, `team-member-status-handler` |
+| [`src/cli/doctor/checks/team-mode.ts`](src/cli/doctor/checks/team-mode.ts) | Doctor check for team-mode prerequisites |
+| [`src/features/builtin-skills/skills/team-mode.ts`](src/features/builtin-skills/skills/team-mode.ts) | Built-in skill documenting the 12 tools — gated on `team_mode.enabled` |
 
 ## WHERE TO LOOK
 
 | Task | Location |
 |------|----------|
-| Add new team tool | `tools/` + register in [`src/plugin/tool-registry.ts`](file:///Users/yeongyu/local-workspaces/omo/src/plugin/tool-registry.ts) `teamModeToolsRecord` |
+| Add new team tool | `tools/` + register in [`src/plugin/tool-registry.ts`](src/plugin/tool-registry.ts) `teamModeToolsRecord` |
 | Modify member eligibility | `types.ts` `AGENT_ELIGIBILITY_REGISTRY` |
 | Change storage format | `types.ts` Zod schemas |
 | Add worktree behavior | `team-worktree/manager.ts` |

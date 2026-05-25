@@ -6,7 +6,7 @@ import {
 } from "@oh-my-opencode/model-core"
 import type {
 	ModelResolutionInput,
-	ExtendedModelResolutionInput,
+	ExtendedModelResolutionInput as CoreExtendedModelResolutionInput,
 } from "@oh-my-opencode/model-core"
 import * as connectedProvidersCache from "./connected-providers-cache"
 
@@ -16,13 +16,19 @@ type CoreModelResolutionResult = ReturnType<typeof resolveModelWithFallbackFromC
 export type ModelResolutionResult = Exclude<CoreModelResolutionResult, undefined>
 export type ModelSource = ModelResolutionResult["source"]
 
+export type ExtendedModelResolutionInput = Omit<CoreExtendedModelResolutionInput, 'userModel' | 'categoryDefaultModel'> & {
+	userModel?: string | string[]
+	categoryDefaultModel?: string | string[]
+	categoryName?: string
+	agentName?: string
+}
+
 export function resolveModelWithFallback(
 	input: ExtendedModelResolutionInput,
 ): CoreModelResolutionResult {
-	return resolveModelWithFallbackFromCore(input, connectedProvidersCache)
+	return resolveModelWithFallbackFromCore(input as any, connectedProvidersCache)
 }
 
 export type {
 	ModelResolutionInput,
-	ExtendedModelResolutionInput,
 }

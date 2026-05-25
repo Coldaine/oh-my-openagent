@@ -62,6 +62,7 @@ export function collectPendingBuiltinAgents(input: {
     const override = agentOverrides[agentName]
       ?? Object.entries(agentOverrides).find(([key]) => key.toLowerCase() === agentName.toLowerCase())?.[1]
     const requirement = AGENT_MODEL_REQUIREMENTS[agentName]
+    const overrideModel = typeof override?.model === "string" ? override.model : undefined
 
     // Check if agent requires a specific model
     if (requirement?.requiresModel && availableModels) {
@@ -73,21 +74,22 @@ export function collectPendingBuiltinAgents(input: {
     const isPrimaryAgent = isFactory(source) && source.mode === "primary"
 
     let resolution = applyModelResolution({
-      uiSelectedModel: (isPrimaryAgent && override?.model === undefined) ? uiSelectedModel : undefined,
-      userModel: override?.model,
+      uiSelectedModel: (isPrimaryAgent && overrideModel === undefined) ? uiSelectedModel : undefined,
+      userModel: overrideModel,
+      agentName: agentName.toLowerCase(),
       requirement,
       availableModels,
       systemDefaultModel,
     })
     if (!resolution) {
-      if (override?.model) {
+      if (overrideModel) {
         // User explicitly configured a model but resolution failed (e.g., cold cache).
         // Honor the user's choice directly instead of falling back to hardcoded chain.
         log("[agent-registration] User-configured model not resolved, using as-is", {
           agent: agentName,
-          configuredModel: override.model,
+          configuredModel: overrideModel,
         })
-        resolution = { model: override.model, provenance: "override" as const }
+        resolution = { model: overrideModel, provenance: "override" as const }
       } else {
         resolution = getFirstFallbackModel(requirement)
       }

@@ -12,7 +12,7 @@ import { resolveCategoryConfig } from "./category-config-resolver";
 
 type PrometheusOverride = Record<string, unknown> & {
   category?: string;
-  model?: string;
+  model?: string | string[];
   variant?: string;
   reasoningEffort?: string;
   textVerbosity?: string;
@@ -56,6 +56,9 @@ export async function buildPrometheusAgentConfig(params: {
 
   const configuredPrometheusModel =
     params.pluginPrometheusOverride?.model ?? categoryConfig?.model;
+  const effectivePrometheusModel = typeof configuredPrometheusModel === "string"
+    ? configuredPrometheusModel
+    : undefined;
 
   const shouldUseCurrentModel = isModelInFallbackChain(
     params.currentModel,
@@ -64,13 +67,17 @@ export async function buildPrometheusAgentConfig(params: {
 
   const modelResolution = resolveModelPipeline({
     intent: {
-      uiSelectedModel: configuredPrometheusModel
+      uiSelectedModel: effectivePrometheusModel
         ? undefined
         : shouldUseCurrentModel
           ? params.currentModel
           : undefined,
-      userModel: params.pluginPrometheusOverride?.model,
-      categoryDefaultModel: categoryConfig?.model,
+      userModel: typeof params.pluginPrometheusOverride?.model === "string"
+        ? params.pluginPrometheusOverride.model
+        : undefined,
+      categoryDefaultModel: typeof categoryConfig?.model === "string"
+        ? categoryConfig.model
+        : undefined,
     },
     constraints: { availableModels },
     policy: {
@@ -118,8 +125,8 @@ export async function buildPrometheusAgentConfig(params: {
   const override = params.pluginPrometheusOverride;
   if (!override) return base;
 
-  const { prompt_append, ...restOverride } = override;
-  const merged = { ...base, ...restOverride };
+  const { prompt_append, model, ...restOverride } = override;
+  const merged: Record<string, unknown> = { ...base, ...restOverride, ...(typeof model === "string" ? { model } : {}) };
   if (prompt_append && typeof merged.prompt === "string") {
     merged.prompt = merged.prompt + "\n" + resolvePromptAppend(prompt_append);
   }

@@ -1,4 +1,6 @@
 import type { AgentConfig } from "@opencode-ai/sdk";
+import type { FallbackModelObject } from "../config/schema/fallback-models";
+import type { AgentPermission } from "../config/schema/internal/permission";
 
 export {
   isClaudeOpus47Model,
@@ -115,19 +117,22 @@ export type BuiltinAgentName =
   | "metis"
   | "momus"
   | "atlas"
-  | "sisyphus-junior";
+  | "sisyphus-junior"
+  | "telamon";
 
 export type OverridableAgentName = "build" | BuiltinAgentName;
 
 export type AgentName = BuiltinAgentName;
 
-export type AgentOverrideConfig = Partial<AgentConfig> & {
+export type AgentOverrideConfig = Partial<Omit<AgentConfig, "model">> & {
+  model?: string | string[];
   category?: string;
   prompt_append?: string;
   skills?: string[];
   tools?: Record<string, boolean>;
+  permission?: AgentPermission;
   variant?: string;
-  fallback_models?: string | (string | import("../config/schema/fallback-models").FallbackModelObject)[];
+  fallback_models?: string | (string | FallbackModelObject)[];
 };
 
 export type AgentOverrides = Partial<

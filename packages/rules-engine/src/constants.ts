@@ -10,7 +10,7 @@ export const PROJECT_RULE_SUBDIRS = [
   [".sisyphus", "rules"],
 ] as const;
 
-export const PROJECT_RULE_FILES = [".github/copilot-instructions.md"] as const;
+export const PROJECT_RULE_FILES = [".github/copilot-instructions.md", "NORTH_STAR.md", "docs/NORTH_STAR.md"] as const;
 export const OPENCODE_USER_RULE_DIRS = [".omo/rules", ".opencode/rules", ".sisyphus/rules"] as const;
 export const USER_RULE_DIR = ".claude/rules";
 export const RULE_EXTENSIONS = [".md", ".mdc"] as const;

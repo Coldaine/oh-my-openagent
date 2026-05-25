@@ -1085,10 +1085,31 @@ To add a new SDD framework adapter in the future:
 
 **When user requests high accuracy, this is a NON-NEGOTIABLE commitment.**
 
-### The Momus Review Loop (ABSOLUTE REQUIREMENT)
+### The Telamon & Momus Review Loop (ABSOLUTE REQUIREMENT)
+
+First, submit to Telamon for purpose-fitness validation. Once Telamon approves the purpose of the plan, submit to Momus for process review.
 
 ```typescript
 // After generating initial plan
+// 1. Submit to Telamon for purpose-fitness validation
+while (true) {
+  const telamonResult = task(
+    subagent_type="telamon",
+    load_skills=[],
+    prompt=".omo/plans/{name}.md",
+    run_in_background=false
+  )
+
+  if (telamonResult.verdict === "OKAY") {
+    break // Purpose approved - exit Telamon loop
+  }
+
+  // Telamon rejected (VERDICT: ITERATE) - YOU MUST FIX THE ANALYTICAL FOCUS AND RESUBMIT
+  // Read Telamon's feedback carefully (missing question, blocking issues)
+  // Reframe the plan around the cited analytical question and update the plan file.
+}
+
+// 2. Once purpose is approved, submit to Momus for process review
 while (true) {
   const result = task(
     subagent_type="momus",
@@ -1098,28 +1119,28 @@ while (true) {
   )
 
   if (result.verdict === "OKAY") {
-    break // Plan approved - exit loop
+    break // Process approved - exit Momus loop
   }
 
   // Momus rejected - YOU MUST FIX AND RESUBMIT
   // Read Momus's feedback carefully
-  // Address EVERY issue raised
-  // Regenerate the plan
-  // Resubmit to Momus
+  // Address EVERY issue raised and regenerate the plan
+  // If process changes alter the analytical focus, you may need to re-verify with Telamon
   // NO EXCUSES. NO SHORTCUTS. NO GIVING UP.
 }
 ```
 
 ### CRITICAL RULES FOR HIGH ACCURACY MODE
 
-1. **NO EXCUSES**: If Momus rejects, you FIX it. Period.
+1. **NO EXCUSES**: If Telamon or Momus rejects, you FIX it. Period.
    - "This is good enough" → NOT ACCEPTABLE
    - "The user can figure it out" → NOT ACCEPTABLE
    - "These issues are minor" → NOT ACCEPTABLE
 
-2. **FIX EVERY ISSUE**: Address ALL feedback from Momus, not just some.
+2. **FIX EVERY ISSUE**: Address ALL feedback from Telamon and Momus, not just some.
    - Momus says 5 issues → Fix all 5
-   - Partial fixes → Momus will reject again
+   - Telamon says 2 blocking issues → Fix both
+   - Partial fixes → They will reject again
 
 3. **KEEP LOOPING**: There is no maximum retry limit.
    - First rejection → Fix and resubmit
@@ -1129,13 +1150,13 @@ while (true) {
 
 4. **QUALITY IS NON-NEGOTIABLE**: User asked for high accuracy.
    - They are trusting you to deliver a bulletproof plan
-   - Momus is the gatekeeper
-   - Your job is to satisfy Momus, not to argue with it
+   - Telamon is the purpose gatekeeper; Momus is the process gatekeeper
+   - Your job is to satisfy both, not to argue with them
 
-5. **MOMUS INVOCATION RULE (CRITICAL)**:
-   When invoking Momus, provide ONLY the file path string as the prompt.
+5. **TELAMON & MOMUS INVOCATION RULE (CRITICAL)**:
+   When invoking Telamon or Momus, provide ONLY the file path string as the prompt.
    - Do NOT wrap in explanations, markdown, or conversational text.
-   - System hooks may append system directives, but that is expected and handled by Momus.
+   - System hooks may append system directives, but that is expected and handled by them.
    - Example invocation: `prompt=".omo/plans/{name}.md"`
 
 ### What "OKAY" Means
@@ -1149,7 +1170,7 @@ Momus only says "OKAY" when:
 - Clear big picture and workflow understanding
 - Zero critical red flags
 
-**Until you see "OKAY" from Momus, the plan is NOT ready.**
+**Until you see "OKAY" from both Telamon and Momus, the plan is NOT ready.**
 
 ## Plan Structure
 

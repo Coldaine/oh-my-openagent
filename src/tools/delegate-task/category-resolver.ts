@@ -136,13 +136,14 @@ Available categories: ${allCategoryNames}`,
   let matchedFallback = false
 
   const overrideModel = sisyphusJuniorModel
-  const explicitCategoryModel = userCategories?.[args.category!]?.model
+  const explicitCategoryModel = resolved.isUserConfiguredModel ? resolved.model : undefined
+  const resolvedCategoryDefaultModel = resolved.isUserConfiguredModel ? undefined : resolved.model
 
   if (!requirement) {
     // Precedence: explicit category model > sisyphus-junior default > category resolved model
     // This keeps `sisyphus-junior.model` useful as a global default while allowing
     // per-category overrides via `categories[category].model`.
-    actualModel = explicitCategoryModel ?? overrideModel ?? resolved.model
+    actualModel = explicitCategoryModel ?? overrideModel ?? resolvedCategoryDefaultModel
     if (actualModel) {
       modelInfo = explicitCategoryModel || overrideModel
         ? { model: actualModel, type: "user-defined", source: "override" }
@@ -157,7 +158,7 @@ Available categories: ${allCategoryNames}`,
     const resolution = resolveModelForDelegateTask({
       userModel: explicitCategoryModel ?? overrideModel,
       userFallbackModels: flattenToFallbackModelStrings(normalizedConfiguredFallbackModels),
-      categoryDefaultModel: resolved.model,
+      categoryDefaultModel: resolvedCategoryDefaultModel,
       isUserConfiguredCategoryModel: resolved.isUserConfiguredModel,
       fallbackChain: requirement.fallbackChain,
       availableModels,

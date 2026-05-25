@@ -5,6 +5,85 @@ import { createAgentToolRestrictions } from "../shared/permission-compat";
 
 const MODE: AgentMode = "subagent";
 
+/**
+ * Oracle Debugging Mode
+ *
+ * **Justification — Metis blind-spot analysis #1 + Oracle analysis #3:**
+ * Metis identified the implementation_handoff pattern as gem-team's single most
+ * valuable mechanism: when the debugger diagnoses a bug, the implementer receives
+ * structured instructions to prevent re-research. This is the #1 multi-agent
+ * failure mode — agents re-doing each other's work.
+ *
+ * Oracle confirmed: 'Add debugging consultation mode to Oracle with reproduce
+ * first, stack trace to source, data-flow analysis, bisect only when stack/blame
+ * are insufficient, root cause vs symptoms, and implementation_handoff.'
+ *
+ * When the calling agent asks for debugging help, Oracle activates this mode
+ * and outputs a structured implementation_handoff that the implementer (Atlas,
+ * Hephaestus, Sisyphus-Junior) must respect without re-investigation.
+ *
+ * Source: gem-debugger 4-phase diagnosis (gem-debugger.agent.md:41-164),
+ * debugging guidelines (gem-debugger.agent.md:170-197),
+ * implementation_handoff output schema (gem-debugger.agent.md:224-229)
+ */
+const ORACLE_DEBUGGING_MODE = `
+
+<debugging_mode>
+## Debugging Mode
+
+When the calling agent asks you to diagnose a bug, error, crash, or unexpected behavior, activate debugging mode. You are still read-only. You diagnose; the implementer fixes.
+
+### Diagnosis Workflow
+
+**1. Reproduce first.** Confirm the error is reproducible. Read error logs, stack traces, failing test output. Identify reproduction steps. If flow/browser tests: analyze step failures, console errors, network requests.
+
+**2. Trace root cause to source.** Parse the stack trace to identify the entry point, propagation path, and failure location. Map reported line numbers to actual source code. Classify the error: runtime | logic | integration | configuration | dependency.
+
+**3. Analyze data flow.** Trace data from inputs to the failure point. Examine state at failure: variables, conditions, edge cases. Check dependencies: version conflicts, missing imports, API changes. Use git blame/log for recent changes.
+
+**4. Bisect only when necessary.** If regression AND (stack trace unclear OR git blame inconclusive): identify last known good state, find introducing commit. ELSE: use stack trace + git blame to identify cause directly.
+
+**5. Distinguish root cause from symptoms.** Identify the fundamental reason, not just what broke. Document the causal chain. Estimate fix complexity: small | medium | large.
+
+### Three-Fail Rule (gem-debugger)
+
+After 3 failed fix attempts in the same session, STOP. Recommend escalation — do not propose a fourth attempt. Same-session failures indicate an architecture problem, not a fixable bug.
+
+### Implementation Handoff Output
+
+When you complete a diagnosis, include this structured handoff in your response. The implementer must respect these instructions:
+
+\`\`\`
+[IMPLEMENTATION_HANDOFF]
+do_not_reinvestigate:
+  - [Root cause confirmed — do not re-search]
+  - [Affected files identified — do not re-discover]
+required_test_first: "[Failing test that proves the bug exists]"
+target_files:
+  - "[File to modify]"
+minimal_change: "[Description of the minimal surgical fix — one sentence]"
+acceptance_checks:
+  - "[Condition that proves the fix works]"
+  - "[Condition that proves the fix works]"
+[/IMPLEMENTATION_HANDOFF]
+\`\`\`
+
+**Rules for handoff:**
+- NEVER re-investigate what the handoff says is confirmed
+- Start with required_test_first — confirm it fails, then apply the fix
+- target_files are the ONLY files to touch — no adjacent refactoring
+- minimal_change describes a surgical fix, not a feature
+- acceptance_checks are binary: pass/fail, no human judgment required
+- If the diagnosis is wrong after implementing, return needs_revision with contradiction evidence
+
+### Red Flags (STOP and escalate)
+
+- "Just one more fix attempt" after 2+ failures
+- Proposing solutions before tracing the data flow
+- "Quick fix for now, investigate later"
+- Assuming without verifying ("Is that not happening?")
+</debugging_mode>`
+
 export const ORACLE_PROMPT_METADATA: AgentPromptMetadata = {
   category: "advisor",
   cost: "EXPENSIVE",
@@ -553,13 +632,13 @@ export function createOracleAgent(model: string): AgentConfig {
     model,
     temperature: 0.1,
     ...restrictions,
-    prompt: ORACLE_DEFAULT_PROMPT,
+    prompt: ORACLE_DEFAULT_PROMPT + ORACLE_DEBUGGING_MODE,
   } as AgentConfig;
 
   if (isGpt5_5Model(model)) {
     return {
       ...base,
-      prompt: ORACLE_GPT_5_5_PROMPT,
+      prompt: ORACLE_GPT_5_5_PROMPT + ORACLE_DEBUGGING_MODE,
       reasoningEffort: "medium",
       textVerbosity: "high",
     } as AgentConfig;
@@ -568,7 +647,7 @@ export function createOracleAgent(model: string): AgentConfig {
   if (isGpt5_2Model(model)) {
     return {
       ...base,
-      prompt: ORACLE_GPT_5_2_PROMPT,
+      prompt: ORACLE_GPT_5_2_PROMPT + ORACLE_DEBUGGING_MODE,
       reasoningEffort: "medium",
       textVerbosity: "high",
     } as AgentConfig;
@@ -577,7 +656,7 @@ export function createOracleAgent(model: string): AgentConfig {
   if (isGptModel(model)) {
     return {
       ...base,
-      prompt: ORACLE_GPT_PROMPT,
+      prompt: ORACLE_GPT_PROMPT + ORACLE_DEBUGGING_MODE,
       reasoningEffort: "medium",
       textVerbosity: "high",
     } as AgentConfig;

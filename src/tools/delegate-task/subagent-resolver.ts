@@ -26,6 +26,39 @@ import { normalizeSDKResponse } from "../../shared"
 import { normalizeModelFormat } from "../../shared/model-format-normalizer"
 import { flattenToFallbackModelStrings, normalizeFallbackModels } from "../../shared/model-resolver"
 import { log } from "../../shared/logger"
+import { isModelAvailable as isPoolModelAvailable, nextModel } from "../../shared/model-pool-state"
+import { appendModelSelectionEvent, createModelSelectionEvent } from "./model-selection-events"
+
+
+function recordDirectAgentModelSelection(agent: string, candidatePool: string[], selectedModel: string, selectionReason: string): void {
+  try {
+    appendModelSelectionEvent(createModelSelectionEvent({
+      dispatchKind: "direct_agent",
+      agent,
+      candidatePool,
+      selectedModel,
+      skippedModels: candidatePool
+        .filter((model) => model !== selectedModel && !isPoolModelAvailable(model))
+        .map((model) => ({ model, reason: "marked unavailable" })),
+      fallbackInvoked: false,
+      selectionReason,
+    }))
+  } catch (error) {
+    log("[delegate-task] Failed to record direct agent model selection event", {
+      agent,
+      error: error instanceof Error ? error.message : String(error),
+    })
+  }
+}
+
+function selectDirectAgentPoolModel(scope: "agent" | "category", scopeName: string, agent: string, pool: string[], selectionReason: string): string | undefined {
+  const selectedModel = nextModel(scope, scopeName, pool)
+  if (selectedModel === undefined) {
+    return undefined
+  }
+  recordDirectAgentModelSelection(agent, pool, selectedModel, selectionReason)
+  return selectedModel
+}
 
 const DEFAULT_PLAN_FALLBACK_AGENT = "plan"
 const RESERVED_HIDDEN_NATIVE_AGENTS = new Set(["build"])
@@ -185,7 +218,12 @@ Create the work plan directly - that's your job as the planning agent.`,
     const agentCategoryConfig = agentOverride?.category
       ? userCategories?.[agentOverride.category]
       : undefined
-    const agentCategoryModel = agentCategoryConfig?.model
+    const agentOverrideModel = Array.isArray(agentOverride?.model)
+      ? selectDirectAgentPoolModel("agent", agentConfigKey, agentToUse, agentOverride.model, "round-robin selected configured direct agent model pool entry")
+      : agentOverride?.model
+    const agentCategoryModel = Array.isArray(agentCategoryConfig?.model)
+      ? selectDirectAgentPoolModel("category", agentOverride?.category ?? agentConfigKey, agentToUse, agentCategoryConfig.model, "round-robin selected category model pool inherited by direct agent")
+      : agentCategoryConfig?.model
     const normalizedAgentFallbackModels = normalizeFallbackModels(
       agentOverride?.fallback_models
       ?? agentCategoryConfig?.fallback_models
@@ -203,7 +241,7 @@ Create the work plan directly - that's your job as the planning agent.`,
         : undefined
 
       const resolution = resolveModelForDelegateTask({
-        userModel: agentOverride?.model ?? agentCategoryModel,
+        userModel: agentOverrideModel ?? agentCategoryModel,
         userFallbackModels: flattenToFallbackModelStrings(normalizedAgentFallbackModels),
         categoryDefaultModel: matchedAgentModelStr,
         fallbackChain: agentRequirement?.fallbackChain,
@@ -220,8 +258,8 @@ Create the work plan directly - that's your job as the planning agent.`,
           const resolvedModel = variantToUse ? { ...normalized, variant: variantToUse } : normalized
           categoryModel = applyCategoryParams(resolvedModel, agentCategoryConfig)
         }
-      } else if (resolutionSkipped && (agentOverride?.model ?? agentCategoryModel)) {
-        const explicitModel = agentOverride?.model ?? agentCategoryModel
+      } else if (resolutionSkipped && (agentOverrideModel ?? agentCategoryModel)) {
+        const explicitModel = agentOverrideModel ?? agentCategoryModel
         const normalized = explicitModel ? normalizeModelFormat(explicitModel) : undefined
         if (normalized) {
           const variantToUse = agentOverride?.variant ?? agentCategoryConfig?.variant
@@ -229,7 +267,7 @@ Create the work plan directly - that's your job as the planning agent.`,
           categoryModel = applyCategoryParams(resolvedModel, agentCategoryConfig)
           log("[delegate-task] Cold cache: using explicit user override for subagent", {
             agent: agentToUse,
-            model: agentOverride?.model ?? agentCategoryModel,
+            model: explicitModel,
           })
         }
       }

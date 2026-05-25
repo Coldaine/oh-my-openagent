@@ -4,7 +4,7 @@ import { FallbackModelsSchema } from "./fallback-models"
 export const CategoryConfigSchema = z.object({
   /** Human-readable description of the category's purpose. Shown in task prompt. */
   description: z.string().optional(),
-  model: z.string().optional(),
+  model: z.union([z.string(), z.array(z.string()).min(1)]).optional(),
   fallback_models: FallbackModelsSchema.optional(),
   variant: z.string().optional(),
   temperature: z.number().min(0).max(2).optional(),

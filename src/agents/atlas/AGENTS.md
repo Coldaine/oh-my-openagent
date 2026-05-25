@@ -5,7 +5,7 @@ description: Developer reference for the Atlas todo-list orchestrator agent -- m
 
 # src/agents/atlas/ -- Todo-List Orchestrator
 
-**Generated:** 2026-05-18
+**Generated:** 2026-05-22
 
 ## OVERVIEW
 
@@ -62,3 +62,24 @@ The markdown files keep live OpenCode sections as placeholders. `agent.ts` resol
 - Post-delegation rule: edit plan checkbox, read plan to confirm, then dispatch next task
 - Registered via `createAtlasAgent` in `src/agents/builtin-agents/atlas-agent.ts`
 - Markdown prompts are imported with Bun's `.md` text loader so Atlas prompt content is bundled into `dist/index.js`.
+
+
+## THREE-FAIL RULE
+
+After 3 consecutive failed attempts at the same task, Atlas escalates rather than looping. Implemented across all 5 prompt variants (commits `092e18c2` + `b0f9e857`).
+
+**Escalation path (attempt 3):**
+1. Stop attempting the fix
+2. Gather evidence bundle: error output, stack trace, minimal reproduction
+3. Consult Oracle via `task` with `subagent_type: "oracle"` and the full evidence bundle
+4. Receive `[IMPLEMENTATION_HANDOFF]` from Oracle — treat as Trusted-tier (do NOT reinvestigate)
+5. Resume the original task using the handoff's `target_files`, `minimal_change`, and `acceptance_checks`
+
+**Attempts 1-2:** use `task_id` retry with materially different approaches.
+
+**Red flags that trigger immediate escalation** (do not wait for attempt 3):
+- "just one more fix" mindset — fixing without first understanding
+- Attempting a fix before reproducing the problem
+- Same error message on successive attempts
+
+**What was removed:** "There is no retry cap" / "NEVER GIVE UP" language has been deleted from all 5 variant prompt sections. The old infinite-retry guidance caused agents to loop on broken approaches indefinitely.

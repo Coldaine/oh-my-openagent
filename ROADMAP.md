@@ -54,6 +54,10 @@ The Pi Engine DI abstraction was deferred. It can be revisited once the adapter 
 
 The codebase is built for the agent doing the work, not for the human reading it. If a structure is harder for a human to understand but makes the agent's job easier, we keep it. If a pattern adds friction to the agent's reasoning, we remove it.
 
+External projects that may inform this refactor are tracked in
+[`docs/reference/external-inspiration.md`](./docs/reference/external-inspiration.md).
+They are reference material only, not runtime dependencies.
+
 The hierarchy of expression is:
 
 1. **Skill** (static knowledge, zero runtime cost)

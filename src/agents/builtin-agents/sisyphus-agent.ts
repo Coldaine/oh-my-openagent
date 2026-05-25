@@ -44,6 +44,9 @@ export function maybeCreateSisyphusConfig(input: {
 
   const sisyphusOverride = agentOverrides["sisyphus"]
   const sisyphusRequirement = AGENT_MODEL_REQUIREMENTS["sisyphus"]
+  const sisyphusOverrideModel = typeof sisyphusOverride?.model === "string"
+    ? sisyphusOverride.model
+    : undefined
   const hasSisyphusExplicitConfig = sisyphusOverride !== undefined
   const meetsSisyphusAnyModelRequirement =
     !sisyphusRequirement?.requiresAnyModel ||
@@ -54,14 +57,15 @@ export function maybeCreateSisyphusConfig(input: {
   if (disabledAgents.includes("sisyphus") || !meetsSisyphusAnyModelRequirement) return undefined
 
   let sisyphusResolution = applyModelResolution({
-    uiSelectedModel: sisyphusOverride?.model !== undefined ? undefined : uiSelectedModel,
-    userModel: sisyphusOverride?.model,
+    uiSelectedModel: sisyphusOverrideModel !== undefined ? undefined : uiSelectedModel,
+    userModel: sisyphusOverrideModel,
+    agentName: "sisyphus",
     requirement: sisyphusRequirement,
     availableModels,
     systemDefaultModel,
   })
 
-  if (isFirstRunNoCache && !sisyphusOverride?.model && !uiSelectedModel) {
+  if (isFirstRunNoCache && !sisyphusOverrideModel && !uiSelectedModel) {
     sisyphusResolution = getFirstFallbackModel(sisyphusRequirement)
   }
 

@@ -211,7 +211,9 @@ export function createToolRegistry(args: {
   )
   const lookAt = isMultimodalLookerEnabled ? factories.createLookAt(ctx) : null
 
-  const getSisyphusJuniorModelOverride = (agentOverride?: { model?: string }): string | undefined => agentOverride?.model
+  const getSisyphusJuniorModelOverride = (agentOverride?: { model?: string | string[] }): string | undefined => {
+    return typeof agentOverride?.model === "string" ? agentOverride.model : undefined
+  }
 
   const delegateTask = factories.createDelegateTask({
     manager: managers.backgroundManager,

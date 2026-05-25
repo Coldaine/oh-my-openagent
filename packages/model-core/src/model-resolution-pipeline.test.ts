@@ -6,17 +6,16 @@ describe("resolveModelPipeline", () => {
     // given
     const result = resolveModelPipeline({
       intent: {
+        uiSelectedModel: "openai/gpt-5.3-codex",
         userModel: "openai/gpt-5.3-codex",
       },
       constraints: {
-        availableModels: new Set<string>(),
+        availableModels: new Set<string>(["openai/gpt-5.3-codex"]),
       },
     })
 
     // when
-    const hasExplicitUserConfigField = result
-      ? Object.prototype.hasOwnProperty.call(result, "explicitUserConfig")
-      : false
+    const hasExplicitUserConfigField = "explicitUserConfig" in result!
 
     // then
     expect(result).toEqual({ model: "openai/gpt-5.3-codex", provenance: "override" })

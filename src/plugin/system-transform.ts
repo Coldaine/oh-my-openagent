@@ -1,8 +1,10 @@
 import type { DefaultModeConfig } from "../config/schema/default-mode"
+import type { CreatedHooks } from "../create-hooks"
 
 const ULTRAWORK_MODE_TAG = "<ultrawork-mode>"
 
 export function createSystemTransformHandler(
+  hooks: CreatedHooks,
   defaultMode?: DefaultModeConfig,
   getUltraworkMessage?: (agentName?: string, modelID?: string) => string,
 ): (
@@ -10,6 +12,14 @@ export function createSystemTransformHandler(
   output: { system: string[] },
 ) => Promise<void> {
   return async (input, output): Promise<void> => {
+    const handoffSubstrate = hooks.handoffSubstrate?.[
+      "experimental.chat.system.transform"
+    ]
+    
+    if (handoffSubstrate) {
+      await Promise.resolve(handoffSubstrate(input, output))
+    }
+
     if (!defaultMode?.ultrawork || !getUltraworkMessage) return
 
     // Avoid re-injecting if the ultrawork prompt is already in the system prompt

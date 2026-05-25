@@ -10,8 +10,15 @@ import { __setTimingConfig, __resetTimingConfig } from "./timing"
 import * as connectedProvidersCache from "../../shared/connected-providers-cache"
 import * as executor from "./executor"
 import { releaseAllPromptAsyncReservationsForTesting } from "../../shared/prompt-async-gate"
+import { resetCounter } from "../../shared/model-pool-state"
 
 const runtimeRequire = require as NodeJS.Require & { cache?: Record<string, unknown> }
+
+mock.module("./model-selection-events", () => ({
+  appendModelSelectionEvent: () => {},
+  getDefaultModelSelectionEventsPath: () => "/tmp/events.jsonl",
+  resetModelSelectionEvents: () => {},
+}))
 
 function clearRequireCache(modulePath: string): void {
   const resolvedPath = runtimeRequire.resolve(modulePath)
@@ -55,6 +62,7 @@ describe("sisyphus-task", () => {
     mock.restore()
     clearRequireCache("./tools")
     __resetModelCache()
+    resetCounter()
     clearSkillCache()
     __setTimingConfig({
       POLL_INTERVAL_MS: 10,
@@ -1178,6 +1186,164 @@ describe("sisyphus-task", () => {
       expect(promptBody.variant).toBe("max")
     }, { timeout: 20000 })
   })
+
+
+
+  describe("model pool launch payloads", () => {
+    test("model pool background payload receives one selected model object, not the pool array", async () => {
+      //#given
+      resetCounter()
+      const { createDelegateTask } = require("./tools")
+      let launchInput: any
+      const mockManager = {
+        launch: async (input: any) => {
+          launchInput = input
+          return {
+            id: "task-model-pool-bg",
+            sessionId: "ses_model_pool_bg",
+            description: "Pool background",
+            agent: "sisyphus-junior",
+            status: "running",
+          }
+        },
+      }
+      const mockClient = {
+        app: { agents: async () => ({ data: [] }) },
+        config: { get: async () => ({ data: { model: SYSTEM_DEFAULT_MODEL } }) },
+        session: {
+          create: async () => ({ data: { id: "ses_model_pool_bg" } }),
+          prompt: async () => ({ data: {} }),
+          promptAsync: async () => ({ data: {} }),
+          messages: async () => ({ data: [] }),
+        },
+      }
+      const tool = createDelegateTask({
+        manager: mockManager,
+        client: mockClient,
+        userCategories: {
+          "model-pool-bg": { model: ["openai/gpt-5.4-mini", "openai/gpt-5.5"] },
+        },
+        connectedProvidersOverride: TEST_CONNECTED_PROVIDERS,
+        availableModelsOverride: createTestAvailableModels(),
+      })
+
+      //#when
+      await tool.execute(
+        {
+          description: "Pool background",
+          prompt: "Use the pool in background mode",
+          category: "model-pool-bg",
+          run_in_background: true,
+          load_skills: [],
+        },
+        { sessionID: "parent-session", messageID: "parent-message", agent: "sisyphus", abort: new AbortController().signal }
+      )
+
+      //#then
+      expect(Array.isArray(launchInput.model)).toBe(false)
+      expect(launchInput.model).toEqual({ providerID: "openai", modelID: "gpt-5.4-mini" })
+    }, { timeout: 10000 })
+
+    test("model pool sync payload receives one selected model object, not the pool array", async () => {
+      //#given
+      resetCounter()
+      const { createDelegateTask } = require("./tools")
+      let promptBody: any
+      const mockManager = { launch: async () => ({}) }
+      const promptMock = async (input: any) => {
+        promptBody = input.body
+        return { data: {} }
+      }
+      const mockClient = {
+        app: { agents: async () => ({ data: [] }) },
+        config: { get: async () => ({ data: { model: SYSTEM_DEFAULT_MODEL } }) },
+        session: {
+          get: async () => ({ data: { directory: "/project" } }),
+          create: async () => ({ data: { id: "ses_model_pool_sync" } }),
+          prompt: promptMock,
+          promptAsync: promptMock,
+          messages: async () => ({ data: [{ info: { role: "assistant" }, parts: [{ type: "text", text: "Done" }] }] }),
+          status: async () => ({ data: { ses_model_pool_sync: { type: "idle" } } }),
+        },
+      }
+      const tool = createDelegateTask({
+        manager: mockManager,
+        client: mockClient,
+        userCategories: {
+          "model-pool-sync": { model: ["openai/gpt-5.4-mini", "openai/gpt-5.5"] },
+        },
+        connectedProvidersOverride: TEST_CONNECTED_PROVIDERS,
+        availableModelsOverride: createTestAvailableModels(),
+      })
+
+      //#when
+      await tool.execute(
+        {
+          description: "Pool sync",
+          prompt: "Use the pool in sync mode",
+          category: "model-pool-sync",
+          run_in_background: false,
+          load_skills: [],
+        },
+        { sessionID: "parent-session", messageID: "parent-message", agent: "sisyphus", abort: new AbortController().signal }
+      )
+
+      //#then
+      expect(Array.isArray(promptBody.model)).toBe(false)
+      expect(promptBody.model).toEqual({ providerID: "openai", modelID: "gpt-5.4-mini" })
+    }, { timeout: 20000 })
+
+    test("model pool category config rotates to a single selected model string before launch", async () => {
+      //#given
+      resetCounter()
+      const { createDelegateTask } = require("./tools")
+      const launchModels: unknown[] = []
+      const mockManager = {
+        launch: async (input: any) => {
+          launchModels.push(input.model)
+          return {
+            id: `task-model-pool-${launchModels.length}`,
+            sessionId: `ses_model_pool_${launchModels.length}`,
+            description: "Pool rotation",
+            agent: "sisyphus-junior",
+            status: "running",
+          }
+        },
+      }
+      const mockClient = {
+        app: { agents: async () => ({ data: [] }) },
+        config: { get: async () => ({ data: { model: SYSTEM_DEFAULT_MODEL } }) },
+        session: {
+          create: async () => ({ data: { id: "ses_model_pool" } }),
+          prompt: async () => ({ data: {} }),
+          promptAsync: async () => ({ data: {} }),
+          messages: async () => ({ data: [] }),
+        },
+      }
+      const tool = createDelegateTask({
+        manager: mockManager,
+        client: mockClient,
+        userCategories: {
+          "model-pool-rotation": { model: ["openai/gpt-5.4-mini", "openai/gpt-5.5"] },
+        },
+        connectedProvidersOverride: TEST_CONNECTED_PROVIDERS,
+        availableModelsOverride: createTestAvailableModels(),
+      })
+      const toolContext = { sessionID: "parent-session", messageID: "parent-message", agent: "sisyphus", abort: new AbortController().signal }
+
+      //#when
+      await tool.execute({ description: "Pool rotation one", prompt: "one", category: "model-pool-rotation", run_in_background: true, load_skills: [] }, toolContext)
+      await tool.execute({ description: "Pool rotation two", prompt: "two", category: "model-pool-rotation", run_in_background: true, load_skills: [] }, toolContext)
+
+      //#then
+      expect(launchModels).toEqual([
+        { providerID: "openai", modelID: "gpt-5.4-mini" },
+        { providerID: "openai", modelID: "gpt-5.5" },
+      ])
+      expect(launchModels.every((model) => !Array.isArray(model))).toBe(true)
+    }, { timeout: 10000 })
+  })
+
 
   describe("skills parameter", () => {
     test("#given load_skills omitted #when executing #then defaults to [] and proceeds (fixes #4119)", async () => {
@@ -3334,7 +3500,7 @@ describe("sisyphus-task", () => {
     })
   })
 
-	describe("delegate task with short skill name", () => {
+  describe("delegate task with short skill name", () => {
 		let envCleanup: Record<string, string | undefined>
 
 		beforeEach(() => {
@@ -3429,8 +3595,8 @@ describe("sisyphus-task", () => {
 		})
 	})
 
-	describe("buildSystemContent", () => {
-    test("returns undefined when no skills and no category promptAppend", () => {
+  describe("buildSystemContent", () => {
+    test("returns governance preambles when no skills and no category promptAppend", () => {
       // given
       const { buildSystemContent } = require("./tools")
 
@@ -3438,10 +3604,11 @@ describe("sisyphus-task", () => {
       const result = buildSystemContent({ skillContent: undefined, categoryPromptAppend: undefined })
 
       // then
-      expect(result).toBeUndefined()
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
     })
 
-    test("returns skill content only when skills provided without category", () => {
+    test("includes governance preambles when skills are provided without category", () => {
       // given
       const { buildSystemContent } = require("./tools")
       const skillContent = "You are a playwright expert"
@@ -3450,10 +3617,12 @@ describe("sisyphus-task", () => {
       const result = buildSystemContent({ skillContent, categoryPromptAppend: undefined })
 
       // then
-      expect(result).toBe(skillContent)
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
+      expect(result).toContain(skillContent)
     })
 
-    test("returns category promptAppend only when no skills", () => {
+    test("includes governance preambles when only category promptAppend is provided", () => {
       // given
       const { buildSystemContent } = require("./tools")
       const categoryPromptAppend = "Focus on visual design"
@@ -3462,7 +3631,9 @@ describe("sisyphus-task", () => {
       const result = buildSystemContent({ skillContent: undefined, categoryPromptAppend })
 
       // then
-      expect(result).toBe(categoryPromptAppend)
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
+      expect(result).toContain(categoryPromptAppend)
     })
 
     test("combines skill content and category promptAppend with separator", () => {
@@ -3508,12 +3679,14 @@ describe("sisyphus-task", () => {
       })
 
       // then
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
       expect(result).toContain("<system>")
       expect(result).toContain("MANDATORY CONTEXT GATHERING PROTOCOL")
       expect(result).toContain("### AVAILABLE CATEGORIES")
       expect(result).toContain("`deep`")
       expect(result).not.toContain("prompt-engineer")
-      expect(result).toBe(buildPlanAgentSystemPrepend(availableCategories, availableSkills))
+      expect(result).toContain(buildPlanAgentSystemPrepend(availableCategories, availableSkills))
     })
 
     test("does not prepend plan agent prompt for prometheus agent", () => {
@@ -3528,7 +3701,9 @@ describe("sisyphus-task", () => {
       })
 
       //#then - prometheus should NOT get plan agent system prepend
-      expect(result).toBe(skillContent)
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
+      expect(result).toContain(skillContent)
       expect(result).not.toContain("MANDATORY CONTEXT GATHERING PROTOCOL")
     })
 
@@ -3544,7 +3719,9 @@ describe("sisyphus-task", () => {
       })
 
       //#then
-      expect(result).toBe(skillContent)
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
+      expect(result).toContain(skillContent)
       expect(result).not.toContain("MANDATORY CONTEXT GATHERING PROTOCOL")
     })
 
@@ -3579,6 +3756,8 @@ describe("sisyphus-task", () => {
       })
 
       // then
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
       expect(result).toContain(planPrepend)
       expect(result).toContain(skillContent)
       expect(result!.indexOf(planPrepend)).toBeLessThan(result!.indexOf(skillContent))
@@ -3593,7 +3772,9 @@ describe("sisyphus-task", () => {
       const result = buildSystemContent({ skillContent, agentName: "oracle" })
 
       // then
-      expect(result).toBe(skillContent)
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
+      expect(result).toContain(skillContent)
       expect(result).not.toContain("<system>")
     })
 
@@ -3606,7 +3787,9 @@ describe("sisyphus-task", () => {
       const result = buildSystemContent({ skillContent, agentName: undefined })
 
       // then
-      expect(result).toBe(skillContent)
+      expect(result).toContain("<intent_check>")
+      expect(result).toContain("<knowledge_trust>")
+      expect(result).toContain(skillContent)
       expect(result).not.toContain("<system>")
     })
   })

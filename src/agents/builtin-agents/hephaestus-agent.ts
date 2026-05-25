@@ -44,6 +44,9 @@ export function maybeCreateHephaestusConfig(input: {
   const hephaestusOverride = agentOverrides["hephaestus"]
   const hephaestusRequirement = AGENT_MODEL_REQUIREMENTS["hephaestus"]
   const hasHephaestusExplicitConfig = hephaestusOverride !== undefined
+  const hephaestusOverrideModel = typeof hephaestusOverride?.model === "string"
+    ? hephaestusOverride.model
+    : undefined
 
   const hasRequiredProvider =
     !hephaestusRequirement?.requiresProvider ||
@@ -54,13 +57,14 @@ export function maybeCreateHephaestusConfig(input: {
   if (!hasRequiredProvider) return undefined
 
   let hephaestusResolution = applyModelResolution({
-    userModel: hephaestusOverride?.model,
+    userModel: hephaestusOverrideModel,
+    agentName: "hephaestus",
     requirement: hephaestusRequirement,
     availableModels,
     systemDefaultModel,
   })
 
-  if (isFirstRunNoCache && !hephaestusOverride?.model) {
+  if (isFirstRunNoCache && !hephaestusOverrideModel) {
     hephaestusResolution = getFirstFallbackModel(hephaestusRequirement)
   }
 
@@ -78,7 +82,7 @@ export function maybeCreateHephaestusConfig(input: {
 
   hephaestusConfig = { ...hephaestusConfig, variant: hephaestusResolvedVariant ?? "medium" }
 
-  const hepOverrideCategory = (hephaestusOverride as Record<string, unknown> | undefined)?.category as string | undefined
+  const hepOverrideCategory = hephaestusOverride?.category
   if (hepOverrideCategory) {
     hephaestusConfig = applyCategoryOverride(hephaestusConfig, hepOverrideCategory, mergedCategories)
   }

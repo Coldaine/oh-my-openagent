@@ -327,11 +327,20 @@ Question({ questions: [{
 
 ---
 
-## Phase 4: High Accuracy Review (Momus Loop)
+## Phase 4: High Accuracy Review (Telamon & Momus Loop)
 
 Only activated when user selects "High Accuracy Review".
 
 ```typescript
+// 1. Submit to Telamon for purpose-fitness validation
+while (true) {
+  const telamonResult = task(subagent_type="telamon", load_skills=[],
+    run_in_background=false, prompt=".omo/plans/{name}.md")
+  if (telamonResult.verdict === "OKAY") break
+  // Telamon rejected (VERDICT: ITERATE) - Fix analytical focus and resubmit.
+}
+
+// 2. Once purpose is approved, submit to Momus for process review
 while (true) {
   const result = task(subagent_type="momus", load_skills=[],
     run_in_background=false, prompt=".omo/plans/{name}.md")
@@ -340,9 +349,11 @@ while (true) {
 }
 ```
 
-**Momus invocation rule**: Provide ONLY the file path as prompt. No explanations or wrapping.
+**Telamon & Momus invocation rule**: Provide ONLY the file path as prompt. No explanations or wrapping.
 
 Momus says "OKAY" only when: 100% file references verified, ≥80% tasks have reference sources, ≥90% have concrete acceptance criteria, zero business logic assumptions.
+Until you see "OKAY" from both Telamon and Momus, the plan is NOT ready.
+
 
 ---
 

@@ -61,6 +61,7 @@ export function createPluginInterface(args: {
     }),
 
     "experimental.chat.system.transform": createSystemTransformHandler(
+      hooks,
       pluginConfig.default_mode,
       getUltraworkMessage,
     ),
