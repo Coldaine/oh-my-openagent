@@ -10,6 +10,10 @@ export interface DelegateTaskPresentation {
   description: string
 }
 
+function formatModelForDisplay(model: string | string[] | undefined): string | undefined {
+  return Array.isArray(model) ? model.join(", ") : model
+}
+
 export function createDelegateTaskPresentation(options: DelegateTaskToolOptions): DelegateTaskPresentation {
   const { userCategories } = options
   const allCategories = mergeCategories(userCategories)
@@ -26,7 +30,7 @@ export function createDelegateTaskPresentation(options: DelegateTaskToolOptions)
       return {
         name,
         description: description || "General tasks",
-        model: categoryConfig.model,
+        model: formatModelForDisplay(categoryConfig.model),
       }
     })
 
