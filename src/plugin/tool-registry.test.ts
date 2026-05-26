@@ -65,6 +65,8 @@ const toolFactories: NonNullable<Parameters<typeof createToolRegistry>[0]["toolF
   createTaskList: mock(() => fakeTool),
   createTaskUpdateTool: mock(() => fakeTool),
   createHashlineEditTool: mock(() => fakeTool),
+  createPlanGraphStatusTool: mock(() => fakeTool),
+  createPlanGraphSeedTeamTasksTool: mock(() => fakeTool),
   createTeamApproveShutdownTool: mock(() => fakeTool),
   createTeamCreateTool: mock(() => fakeTool),
   createTeamDeleteTool: mock(() => fakeTool),
@@ -116,6 +118,30 @@ describe("#given tool trimming prioritization", () => {
 })
 
 describe("#given task_system configuration", () => {
+  test("#when registry is created #then plan graph status is always registered", () => {
+    syncSessionCreatedCallbacks.length = 0
+
+    const result = createToolRegistry({
+      ctx: { directory: "/tmp" } as Parameters<typeof createToolRegistry>[0]["ctx"],
+      pluginConfig: createPluginConfig(),
+      managers: {
+        backgroundManager: {},
+        tmuxSessionManager: {},
+        skillMcpManager: {},
+      } as Parameters<typeof createToolRegistry>[0]["managers"],
+      skillContext: {
+        mergedSkills: [],
+        availableSkills: [],
+        browserProvider: "playwright",
+        disabledSkills: new Set(),
+      },
+      availableCategories: [],
+      toolFactories,
+    })
+
+    expect(result.filteredTools).toHaveProperty("plan_graph_status")
+  })
+
   test("#when task_system is omitted #then task tools are not registered by default", () => {
     syncSessionCreatedCallbacks.length = 0
 
@@ -176,7 +202,7 @@ describe("#given task_system configuration", () => {
 })
 
 describe("#given team_mode configuration", () => {
-  test("#when team_mode is enabled #then all 12 team tools are registered", () => {
+  test("#when team_mode is enabled #then all team tools and graph seeding are registered", () => {
     syncSessionCreatedCallbacks.length = 0
 
     const result = createToolRegistry({
@@ -204,6 +230,7 @@ describe("#given team_mode configuration", () => {
     for (const teamToolName of TEAM_TOOL_NAMES) {
       expect(result.filteredTools).toHaveProperty(teamToolName)
     }
+    expect(result.filteredTools).toHaveProperty("plan_graph_seed_team_tasks")
   })
 
   test("#when team_mode is disabled #then zero team tools are registered", () => {
@@ -234,6 +261,7 @@ describe("#given team_mode configuration", () => {
     const registeredTeamToolNames = Object.keys(result.filteredTools).filter((toolName) => toolName.startsWith("team_"))
 
     expect(registeredTeamToolNames).toHaveLength(0)
+    expect(result.filteredTools).not.toHaveProperty("plan_graph_seed_team_tasks")
   })
 })
 

@@ -33,6 +33,7 @@ export async function injectBoulderContinuation(input: {
   worktreePath?: string
   preferredTaskSessionId?: string
   preferredTaskTitle?: string
+  planGraphStatus?: string
   backgroundManager?: BackgroundTaskStatusProvider
   sessionState: SessionState
   idleSettleMs?: number
@@ -47,6 +48,7 @@ export async function injectBoulderContinuation(input: {
     worktreePath,
     preferredTaskSessionId,
     preferredTaskTitle,
+    planGraphStatus,
     backgroundManager,
     sessionState,
     idleSettleMs,
@@ -68,6 +70,7 @@ export async function injectBoulderContinuation(input: {
 	const prompt =
 		BOULDER_CONTINUATION_PROMPT.replace(/{PLAN_NAME}/g, planName) +
 		`\n\n[Status: ${total - remaining}/${total} completed, ${remaining} remaining]` +
+		(planGraphStatus ? `\n\n${planGraphStatus}` : "") +
 		preferredSessionContext +
 		worktreeContext
 	const resolvedContinuationAgent = resolveRegisteredAgentName(

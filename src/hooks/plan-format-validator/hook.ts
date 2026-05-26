@@ -4,6 +4,7 @@ import { resolve } from "node:path"
 import type { PluginInput } from "@opencode-ai/plugin"
 
 import { getPlanProgress } from "../../features/boulder-state/storage"
+import { readPlanGraph } from "../../features/boulder-state/plan-graph"
 import { log } from "../../shared/logger"
 
 const WRITE_TOOLS = new Set(["Write", "Edit", "write", "edit"])
@@ -71,6 +72,18 @@ function buildWarning(rawCount: number, parsedCount: number): string {
   ].join("\n")
 }
 
+function buildGraphWarning(warnings: string[]): string {
+  return [
+    "",
+    "<plan-format-warning>",
+    "Plan graph/checklist alignment warnings:",
+    ...warnings.map((warning) => `- ${warning}`),
+    "",
+    "Fix the `## Machine-Readable Plan Graph` JSON so it mirrors every top-level task checkbox before `/start-work`.",
+    "</plan-format-warning>",
+  ].join("\n")
+}
+
 function isPlanWrite(tool: string, args: Record<string, unknown>): string | null {
   if (!WRITE_TOOLS.has(tool)) return null
 
@@ -118,6 +131,18 @@ export function createPlanFormatValidatorHook(_ctx: PluginInput) {
 
       const progress = getPlanProgress(resolvedPath)
       const parsedCount = progress.total
+
+      const planGraph = readPlanGraph(resolvedPath)
+      const graphWarnings = planGraph?.warnings ?? []
+      if (graphWarnings.length > 0) {
+        log(`[plan-format-validator] Plan ${filePath}: graph warnings`, {
+          sessionID: input.sessionID,
+          filePath,
+          warnings: graphWarnings,
+        })
+        output.output = `${output.output}${buildGraphWarning(graphWarnings)}`
+        return
+      }
 
       if (rawCount === parsedCount) return
 

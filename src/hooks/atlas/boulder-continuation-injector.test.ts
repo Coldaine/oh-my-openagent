@@ -265,4 +265,52 @@ describe("injectBoulderContinuation", () => {
     expect(promptPart?.synthetic).toBe(true)
     expect(promptPart?.metadata?.compaction_continue).toBe(true)
   })
+
+  test("#given plan graph context #when injecting continuation #then prompt includes graph-ready tasks", async () => {
+    // given
+    registerAgentName("atlas")
+    const capturedRequests: Array<{
+      body?: {
+        parts?: Array<{ text?: string }>
+      }
+    }> = []
+    const promptAsyncMock = mock(async (request: unknown) => {
+      capturedRequests.push(request as typeof capturedRequests[number])
+      return undefined
+    })
+    const messagesMock = mock(async () => ({ data: [] }))
+
+    const ctx = unsafeTestValue<PluginInput>({
+      directory: "/tmp",
+      client: {
+        session: {
+          messages: messagesMock,
+          promptAsync: promptAsyncMock,
+        },
+      },
+    })
+
+    // when
+    const result = await injectBoulderContinuation({
+      ctx,
+      sessionID: "ses_test_graph",
+      planName: "test-plan",
+      remaining: 2,
+      total: 3,
+      agent: "atlas",
+      planGraphStatus: [
+        "## Plan Graph Status",
+        "- todo:2 - Wire status tool [quick]",
+        "- todo:3 - Seed team tasks [deep]",
+      ].join("\n"),
+      sessionState: { promptFailureCount: 0 },
+    })
+
+    // then
+    expect(result).toBe("injected")
+    const promptText = capturedRequests[0]?.body?.parts?.[0]?.text ?? ""
+    expect(promptText).toContain("## Plan Graph Status")
+    expect(promptText).toContain("todo:2 - Wire status tool [quick]")
+    expect(promptText).toContain("todo:3 - Seed team tasks [deep]")
+  })
 })

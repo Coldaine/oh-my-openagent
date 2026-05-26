@@ -1910,6 +1910,57 @@ session_id: ses_untrusted_999
       expect(callArgs.body.parts[0].text).toContain("2 remaining")
     })
 
+    test("should include graph-ready batch in continuation prompt", async () => {
+      // given - boulder state with a machine-readable graph
+      const planPath = join(TEST_DIR, "graph-ready-plan.md")
+      writeFileSync(planPath, `# Plan
+
+## TODOs
+
+- [x] 1. Build parser
+- [ ] 2. Wire status tool
+- [ ] 3. Seed team tasks
+
+## Machine-Readable Plan Graph
+
+\`\`\`json
+{
+  "version": 1,
+  "tasks": [
+    { "id": "todo:1", "title": "Build parser", "status": "completed", "wave": 1, "category": "quick" },
+    { "id": "todo:2", "title": "Wire status tool", "status": "pending", "wave": 2, "category": "quick", "blockedBy": ["todo:1"] },
+    { "id": "todo:3", "title": "Seed team tasks", "status": "pending", "wave": 2, "category": "deep", "blockedBy": ["todo:1"] }
+  ]
+}
+\`\`\`
+`)
+
+      const state: BoulderState = {
+        active_plan: planPath,
+        started_at: "2026-01-02T10:00:00Z",
+        session_ids: [MAIN_SESSION_ID],
+        plan_name: "graph-ready-plan",
+      }
+      writeBoulderState(TEST_DIR, state)
+
+      const mockInput = createMockPluginInput()
+      const hook = createTestAtlasHook(mockInput)
+
+      // when
+      await hook.handler({
+        event: {
+          type: "session.idle",
+          properties: { sessionID: MAIN_SESSION_ID },
+        },
+      })
+
+      // then
+      const callArgs = mockInput._promptMock.mock.calls[0][0]
+      expect(callArgs.body.parts[0].text).toContain("## Plan Graph Status")
+      expect(callArgs.body.parts[0].text).toContain("todo:2 - Wire status tool [quick]")
+      expect(callArgs.body.parts[0].text).toContain("todo:3 - Seed team tasks [deep]")
+    })
+
     test("should include preferred reuse session in continuation prompt for current top-level task", async () => {
       // given - boulder state with tracked preferred session
       const planPath = join(TEST_DIR, "preferred-session-plan.md")

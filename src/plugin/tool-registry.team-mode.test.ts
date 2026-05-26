@@ -99,6 +99,8 @@ describe("team-mode tool registry wiring", () => {
         createTaskList: mock(() => fakeTool),
         createTaskUpdateTool: mock(() => fakeTool),
         createHashlineEditTool: mock(() => fakeTool),
+        createPlanGraphStatusTool: mock(() => fakeTool),
+        createPlanGraphSeedTeamTasksTool: mock(() => fakeTool),
         createTeamCreateTool: mock(() => fakeTool),
         createTeamDeleteTool: mock(() => fakeTool),
         createTeamShutdownRequestTool: mock(() => fakeTool),
@@ -138,6 +140,7 @@ describe("team-mode tool registry wiring", () => {
     const createTeamTaskGetTool = mock(() => fakeTool)
     const createTeamStatusTool = mock(() => fakeTool)
     const createTeamListTool = mock(() => fakeTool)
+    const createPlanGraphSeedTeamTasksTool = mock(() => fakeTool)
 
     // when
     createToolRegistry({
@@ -172,6 +175,8 @@ describe("team-mode tool registry wiring", () => {
         createTaskList: mock(() => fakeTool),
         createTaskUpdateTool: mock(() => fakeTool),
         createHashlineEditTool: mock(() => fakeTool),
+        createPlanGraphStatusTool: mock(() => fakeTool),
+        createPlanGraphSeedTeamTasksTool,
         createTeamCreateTool,
         createTeamDeleteTool,
         createTeamShutdownRequestTool,
@@ -200,5 +205,6 @@ describe("team-mode tool registry wiring", () => {
     expect(createTeamTaskGetTool).toHaveBeenCalledWith(expect.anything(), client)
     expect(createTeamStatusTool).toHaveBeenCalledWith(expect.anything(), client, expect.anything())
     expect(createTeamListTool).toHaveBeenCalledWith(expect.anything(), client)
+    expect(createPlanGraphSeedTeamTasksTool).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ directory: "/tmp/team-mode" }))
   })
 })
