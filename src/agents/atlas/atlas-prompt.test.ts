@@ -75,6 +75,25 @@ describe("Atlas prompts plan path consistency", () => {
   })
 })
 
+describe("Atlas prompts plan graph scheduling", () => {
+  test("all variants should prefer graph-ready batches over ad hoc checkbox ordering", () => {
+    for (const [name, prompt] of ALL_VARIANTS) {
+      const lowerPrompt = prompt.toLowerCase()
+
+      expect(prompt, `${name}: missing plan graph status tool`).toContain("plan_graph_status")
+      expect(prompt, `${name}: missing team task seeding tool`).toContain("plan_graph_seed_team_tasks")
+      expect(prompt, `${name}: missing machine-readable graph section`).toContain("Machine-Readable Plan Graph")
+      expect(lowerPrompt, `${name}: missing ready batch guidance`).toContain("ready batch")
+      expect(lowerPrompt, `${name}: missing graph fallback guidance`).toContain("fall back")
+      expect(lowerPrompt, `${name}: missing team mode guidance`).toContain("team mode")
+      expect(lowerPrompt, `${name}: missing task fallback guidance`).toContain("task()")
+      expect(lowerPrompt, `${name}: missing final-wave delegation guidance`).toContain(
+        "final-wave reviewer tasks stay delegated through task()",
+      )
+    }
+  })
+})
+
 describe("Atlas prompts parallel-by-default mandate", () => {
   test("all variants should mandate parallel as the default delegation mode", () => {
     for (const [, prompt] of ALL_VARIANTS) {

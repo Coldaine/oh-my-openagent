@@ -255,7 +255,7 @@ TodoWrite([
 ])
 ```
 
-Oracle verification gates (plan-1b, plan-2b, plan-5b) are blocking. Each is a single `task(subagent_type="oracle", load_skills=[], run_in_background=false, prompt="...")` invocation that must return `VERDICT: GO` before the workflow continues. `NO-GO` is a directive to fix the cited issues and rerun on the same Oracle session via `task_id`, not a license to skip.
+Oracle verification gates (plan-1b, plan-2b, plan-5b) are blocking. Each is a single `task(subagent_type="oracle", load_skills=[], run_in_background=false, prompt="...")` invocation that must return `VERDICT: GO` before the workflow continues. `NO-GO` is a directive to fix the cited issues and rerun on the same Oracle session via `task_id`, not a license to skip. Phase 2 must validate graph/checklist alignment for the `## Machine-Readable Plan Graph` block.
 
 ### Step 2: Consult Metis (MANDATORY)
 
@@ -277,11 +277,29 @@ Incorporate Metis findings silently. Generate plan immediately.
 **Write OVERWRITES. Never call Write twice on the same file.**
 Split into: **one Write** (skeleton) + **multiple Edits** (tasks in batches of 2-4).
 1. Write skeleton: All sections EXCEPT individual task details.
-2. Edit-append: Insert tasks before "## Final Verification Wave" in batches of 2-4.
+2. Edit-append: Insert tasks before "## Machine-Readable Plan Graph" in batches of 2-4.
 3. Verify completeness: Read the plan file to confirm all tasks present.
 </write_protocol>
 
 **Single Plan Mandate**: EVERYTHING goes into ONE plan. Never split into multiple plans. 50+ TODOs is fine.
+
+### Required Machine-Readable Plan Graph
+
+Every generated plan MUST include `## Machine-Readable Plan Graph` with valid JSON. The block mirrors every top-level checkbox in `## TODOs` and `## Final Verification Wave` so Boulder, Atlas, and Team Mode can schedule it.
+
+Required graph task fields: `id`, `title`, `status`, `wave`, `category`, `skills`, `blockedBy`, `blocks`, `references`, `qaEvidencePaths`, `promptSummary`.
+
+ID rules: implementation tasks use `todo:N`; final reviewers use `final-wave:F1`, `final-wave:F2`, etc. `status` mirrors the checkbox. Dependencies use graph IDs.
+
+```json
+{
+  "version": 1,
+  "tasks": [
+    { "id": "todo:1", "title": "Task title", "status": "pending", "wave": 1, "category": "quick", "skills": [], "blockedBy": [], "blocks": ["todo:2"], "references": ["src/path.ts:12"], "qaEvidencePaths": [".omo/evidence/task-1-happy.txt"], "promptSummary": "Executable worker summary." },
+    { "id": "final-wave:F1", "title": "Plan Compliance Audit", "status": "pending", "wave": 99, "category": "oracle", "skills": [], "blockedBy": ["todo:1"], "blocks": [], "references": [".omo/plans/{name}.md"], "qaEvidencePaths": [".omo/evidence/final-qa/"], "promptSummary": "Audit finished work against the plan." }
+  ]
+}
+```
 
 ### Step 4: Self-Review
 

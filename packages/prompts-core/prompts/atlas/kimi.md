@@ -222,6 +222,22 @@ The parallel/sequential decision is LOW-ENTROPY for orchestration: either there 
 If you catch yourself enumerating "approach 1 / approach 2" for a dispatch decision, you are in the wrong loop. Pick the obvious dispatch — fan out the parallel batch — and continue.
 </kimi_parallel_addendum>
 
+<plan_graph_scheduling>
+## Plan Graph Scheduling
+
+Before choosing work, call `plan_graph_status` for the active `.omo/plans/{plan-name}.md`. Prefer the `## Machine-Readable Plan Graph` ready batch over ad hoc checkbox ordering.
+
+Use graph fields:
+- `readyBatch`: tasks whose `blockedBy` are complete in the lowest unfinished wave
+- `category` and `skills`: dispatch hints for `task()`
+- `references`, `qaEvidencePaths`, `promptSummary`: context to include in the 6-section prompt
+- warnings: fix the plan when possible, or fall back to top-level checkbox parsing when the graph is absent, malformed, or mismatched
+
+If Team Mode is enabled and an active team exists, call `plan_graph_seed_team_tasks` once for the active plan, then let workers claim owned/unblocked tasks from the seeded graph metadata. If Team Mode is disabled, dispatch the ready batch through `task()` using the graph category and skills.
+
+Final-wave reviewer tasks stay delegated through task(), not Team Mode. They remain approval gates and run only after implementation tasks complete.
+</plan_graph_scheduling>
+
 <workflow>
 ## Step 0: Register Tracking
 
@@ -235,9 +251,10 @@ TodoWrite([
 ## Step 1: Analyze Plan
 
 1. Read the plan file ONCE.
-2. Parse actionable **top-level** task checkboxes in `## TODOs` and `## Final Verification Wave`
+2. Call `plan_graph_status` and use the graph ready batch when available.
+3. Parse actionable **top-level** task checkboxes in `## TODOs` and `## Final Verification Wave` only as the fall back.
    - Ignore nested checkboxes under Acceptance Criteria, Evidence, Definition of Done, and Final Checklist sections.
-3. Build the dependency map ONCE:
+4. Build the dependency map ONCE:
    - SEQUENTIAL only if there is a NAMED dependency (input from another task or shared file).
    - Everything else is PARALLEL. Do not re-evaluate this decision later.
 
@@ -261,7 +278,7 @@ Files: learnings.md, decisions.md, issues.md, problems.md.
 
 ### 3.1 COMMIT TO PARALLEL — DECIDE ONCE, FAN OUT
 
-Per the parallel-by-default mandate: every task without a NAMED blocker goes in the SAME response. Multiple `task()` calls in one turn is the EXPECTED shape — not the exception.
+Per the parallel-by-default mandate: every task in the graph ready batch without a NAMED blocker goes in the SAME response. Multiple `task()` calls in one turn is the EXPECTED shape — not the exception.
 
 Make the parallel/sequential call ONCE per batch and execute. Do not reopen the decision in mid-flight unless evidence (file conflict, input dependency) appears.
 

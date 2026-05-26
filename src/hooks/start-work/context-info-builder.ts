@@ -9,6 +9,7 @@ import {
   getPlanProgress,
   getWorkByPlanName,
   getWorkResumeOptions,
+  readPlanGraph,
   readBoulderState,
   resolveBoulderPlanPath,
   selectActiveWork,
@@ -58,6 +59,7 @@ function buildAutoSelectedPlanContextInfoOnly(params: {
   const { planPath, sessionId, timestamp, worktreeBlock, reason } = params
   const progress = getPlanProgress(planPath)
   const reasonLine = reason ? `**Reason**: ${reason}\n` : ""
+  const graphStatus = buildPlanGraphStatusBlock(planPath)
 
   return `
 ## Auto-Selected Plan
@@ -68,8 +70,9 @@ function buildAutoSelectedPlanContextInfoOnly(params: {
 **Session ID**: ${sessionId}
 **Started**: ${timestamp}
 ${reasonLine}${worktreeBlock}
+${graphStatus}
 
-boulder.json has been created. Read the plan and begin execution.`
+boulder.json has been created. Read the plan graph status and begin with the ready batch.`
 }
 
 function buildAutoSelectedPlanContextWithStateInit(params: {
@@ -138,6 +141,45 @@ Ask the user which plan to work on.`
 
  Could not find a plan matching "${explicitPlanName}".
  No incomplete plans available. Create a new plan using the Prometheus agent.`
+}
+
+function buildPlanGraphStatusBlock(planPath: string): string {
+  const parsed = readPlanGraph(planPath)
+  if (!parsed) {
+    return `
+## Plan Graph Status
+
+Could not read a plan graph for this plan. Use \`plan_graph_status\` after inspecting the file.`
+  }
+
+  const readyLines = parsed.readyBatch.length > 0
+    ? parsed.readyBatch
+        .map((task) => `- ${task.id} - ${task.title}${task.category ? ` [${task.category}]` : ""} (wave ${task.wave})`)
+        .join("\n")
+    : "- none"
+  const blockedLines = parsed.blockedTasks.length > 0
+    ? parsed.blockedTasks
+        .map((task) => `- ${task.id} - ${task.reason}${task.blockedBy.length > 0 ? ` (blocked by ${task.blockedBy.join(", ")})` : ""}`)
+        .join("\n")
+    : "- none"
+  const warningLines = parsed.warnings.length > 0
+    ? `\n**Warnings**:\n${parsed.warnings.map((warning) => `- ${warning}`).join("\n")}`
+    : ""
+
+  return `
+## Plan Graph Status
+
+**Source**: ${parsed.source}
+**Progress**: ${parsed.progress.completed}/${parsed.progress.total} tasks completed
+
+**Ready batch**:
+${readyLines}
+
+**Blocked tasks**:
+${blockedLines}
+${warningLines}
+
+Use \`plan_graph_status\` for the full machine-readable view. If Team Mode is enabled and a team run exists, use \`plan_graph_seed_team_tasks\` to seed implementation tasks; final-wave reviewer tasks stay delegated through \`task()\`.`
 }
 
 function formatElapsedHuman(elapsedMs: number | undefined): string {
@@ -303,6 +345,7 @@ Looking for new plans...`
   const worktreeDisplay = effectiveWorktree
     ? (worktreeBlock || createWorktreeActiveBlock(effectiveWorktree))
     : worktreeBlock
+  const graphStatus = buildPlanGraphStatusBlock(planPath)
 
   return `
 ## Active Work Session Found
@@ -314,9 +357,10 @@ Looking for new plans...`
 **Sessions**: ${existingState.session_ids.length + 1} (current session appended)
 **Started**: ${existingState.started_at}
 ${worktreeDisplay}
+${graphStatus}
 
 The current session (${sessionId}) has been added to session_ids.
-Read the plan file and continue from the first unchecked task.`
+Read the plan graph status and continue from the ready batch.`
 }
 
 function shouldResumeExistingState(input: {

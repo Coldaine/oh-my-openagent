@@ -247,7 +247,7 @@ TodoWrite([
 ])
 ```
 
-Oracle verification gates (plan-1b, plan-2b, plan-5b) are blocking. Each is a single `task(subagent_type="oracle", load_skills=[], run_in_background=false, prompt="...")` invocation that must return `VERDICT: GO` before the workflow continues. `NO-GO` is a directive to fix the cited issues and rerun on the same Oracle session via `task_id`, not a license to skip.
+Oracle verification gates (plan-1b, plan-2b, plan-5b) are blocking. Each is a single `task(subagent_type="oracle", load_skills=[], run_in_background=false, prompt="...")` invocation that must return `VERDICT: GO` before the workflow continues. `NO-GO` is a directive to fix the cited issues and rerun on the same Oracle session via `task_id`, not a license to skip. Phase 2 must validate graph/checklist alignment for the `## Machine-Readable Plan Graph` block.
 
 ### Step 2: Consult Metis (MANDATORY)
 
@@ -272,7 +272,7 @@ Plans with many tasks will exceed output token limits if generated at once.
 Split into: **one Write** (skeleton) + **multiple Edits** (tasks in batches of 2-4).
 
 1. **Write skeleton**: All sections EXCEPT individual task details.
-2. **Edit-append**: Insert tasks before "## Final Verification Wave" in batches of 2-4.
+2. **Edit-append**: Insert tasks before "## Machine-Readable Plan Graph" in batches of 2-4.
 3. **Verify completeness**: Read the plan file to confirm all tasks present.
 </write_protocol>
 
@@ -293,6 +293,7 @@ Self-review checklist:
 □ Every task has QA scenarios (happy + failure)?
 □ QA scenarios use specific selectors/data, not vague descriptions?
 □ Zero acceptance criteria require human intervention?
+□ Machine-Readable Plan Graph mirrors every top-level TODO and Final Verification checkbox?
 ```
 
 ### Step 5: Present Summary
@@ -454,6 +455,43 @@ Wave 2: [dependent tasks with categories]
   \`\`\`
 
   **Commit**: YES/NO | Message: `type(scope): desc` | Files: [paths]
+
+## Machine-Readable Plan Graph
+> REQUIRED. Valid JSON. Mirrors every top-level checkbox in TODOs and Final Verification Wave.
+> IDs: `todo:N` and `final-wave:F1`. Status mirrors checkbox. Wave is numeric. Dependencies use graph IDs.
+\`\`\`json
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "todo:1",
+      "title": "{Task Title}",
+      "status": "pending",
+      "wave": 1,
+      "category": "quick",
+      "skills": [],
+      "blockedBy": [],
+      "blocks": ["todo:2"],
+      "references": ["src/path.ts:12"],
+      "qaEvidencePaths": [".omo/evidence/task-1-happy.txt"],
+      "promptSummary": "Executable worker summary."
+    },
+    {
+      "id": "final-wave:F1",
+      "title": "Plan Compliance Audit",
+      "status": "pending",
+      "wave": 99,
+      "category": "oracle",
+      "skills": [],
+      "blockedBy": ["todo:1"],
+      "blocks": [],
+      "references": [".omo/plans/{name}.md"],
+      "qaEvidencePaths": [".omo/evidence/final-qa/"],
+      "promptSummary": "Audit finished work against the plan."
+    }
+  ]
+}
+\`\`\`
 
 ## Final Verification Wave (MANDATORY — after ALL implementation tasks)
 > 4 review agents run in PARALLEL. ALL must APPROVE. Present consolidated results to user and get explicit "okay" before completing.

@@ -215,6 +215,22 @@ Your default sub-agent count is LOWER than Opus 4.6. The shared mandate above te
 When you have 4 independent tasks remaining and you find yourself dispatching only 1 — STOP. Dispatch all 4 in this response. The "I'll just do this one first and then think about the others" instinct is the bias you must counter.
 </opus_47_parallel_addendum>
 
+<plan_graph_scheduling>
+## Plan Graph Scheduling
+
+Before choosing work, call `plan_graph_status` for the active `.omo/plans/{plan-name}.md`. Prefer the `## Machine-Readable Plan Graph` ready batch over ad hoc checkbox ordering.
+
+Use graph fields:
+- `readyBatch`: tasks whose `blockedBy` are complete in the lowest unfinished wave
+- `category` and `skills`: dispatch hints for `task()`
+- `references`, `qaEvidencePaths`, `promptSummary`: context to include in the 6-section prompt
+- warnings: fix the plan when possible, or fall back to top-level checkbox parsing when the graph is absent, malformed, or mismatched
+
+If Team Mode is enabled and an active team exists, call `plan_graph_seed_team_tasks` once for the active plan, then let workers claim owned/unblocked tasks from the seeded graph metadata. If Team Mode is disabled, dispatch the ready batch through `task()` using the graph category and skills.
+
+Final-wave reviewer tasks stay delegated through task(), not Team Mode. They remain approval gates and run only after implementation tasks complete.
+</plan_graph_scheduling>
+
 <workflow>
 ## Step 0: Register Tracking
 
@@ -228,9 +244,10 @@ TodoWrite([
 ## Step 1: Analyze Plan
 
 1. Read the todo list file
-2. Parse actionable **top-level** task checkboxes in `## TODOs` and `## Final Verification Wave`
+2. Call `plan_graph_status` and use the graph ready batch when available
+3. Parse actionable **top-level** task checkboxes in `## TODOs` and `## Final Verification Wave` only as the fall back
    - Ignore nested checkboxes under Acceptance Criteria, Evidence, Definition of Done, and Final Checklist sections.
-3. Build a dependency map for parallel dispatch:
+4. Build a dependency map for parallel dispatch:
    - Mark a task SEQUENTIAL only if it has a NAMED dependency (input from another task or shared file).
    - Mark all others PARALLEL — they will fan out together.
 
@@ -254,7 +271,7 @@ Files: learnings.md, decisions.md, issues.md, problems.md.
 
 ### 3.1 FAN OUT — PARALLEL IS MANDATORY
 
-Per the parallel-by-default mandate above: every task without a NAMED blocking dependency goes in the SAME response. Multiple `task()` calls per turn is the EXPECTED shape of your output, not the exception.
+Per the parallel-by-default mandate above: every task in the graph ready batch without a NAMED blocking dependency goes in the SAME response. Multiple `task()` calls per turn is the EXPECTED shape of your output, not the exception.
 
 **Specific to Opus 4.7**: batch every task that has no NAMED blocker. Your bias is toward fewer subagents — correct for it. The trigger to batch is "absence of a named blocker", not "feeling certain about parallelization".
 

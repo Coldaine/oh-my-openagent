@@ -107,6 +107,51 @@ describe("buildStartWorkContextInfo", () => {
     expect(clearSpy).toHaveBeenCalledTimes(0)
   })
 
+  test("includes plan graph ready batch when resuming active work", () => {
+    // given
+    const planPath = writePlan("graph-active-plan", `# Plan
+
+## TODOs
+
+- [x] 1. Build parser
+- [ ] 2. Wire status tool
+- [ ] 3. Seed team tasks
+
+## Machine-Readable Plan Graph
+
+\`\`\`json
+{
+  "version": 1,
+  "tasks": [
+    { "id": "todo:1", "title": "Build parser", "status": "completed", "wave": 1, "category": "quick" },
+    { "id": "todo:2", "title": "Wire status tool", "status": "pending", "wave": 2, "category": "quick", "blockedBy": ["todo:1"], "promptSummary": "Expose graph status." },
+    { "id": "todo:3", "title": "Seed team tasks", "status": "pending", "wave": 2, "category": "deep", "blockedBy": ["todo:1"], "promptSummary": "Seed Team Mode tasks." }
+  ]
+}
+\`\`\`
+`)
+    writeBoulderState(testDirectory, createBoulderState(planPath, "session-a", "atlas"))
+
+    // when
+    const contextInfo = buildStartWorkContextInfo({
+      ctx: createPluginInput(),
+      explicitPlanName: null,
+      existingState: readExistingState(),
+      sessionId: "session-current",
+      timestamp: "2026-05-11T00:00:00.000Z",
+      activeAgent: "atlas",
+      worktreePath: undefined,
+      worktreeBlock: "",
+    })
+
+    // then
+    expect(contextInfo).toContain("## Plan Graph Status")
+    expect(contextInfo).toContain("Ready batch")
+    expect(contextInfo).toContain("todo:2 - Wire status tool [quick]")
+    expect(contextInfo).toContain("todo:3 - Seed team tasks [deep]")
+    expect(contextInfo).toContain("plan_graph_status")
+  })
+
   test("explicit plan selects matching work only and never clears boulder state", () => {
     // given
     const clearSpy = spyOn(boulderState, "clearBoulderState")

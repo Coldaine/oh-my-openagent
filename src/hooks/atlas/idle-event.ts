@@ -7,6 +7,7 @@ import {
   getTaskSessionState,
   readBoulderState,
   readCurrentTopLevelTask,
+  readPlanGraph,
   resolveBoulderPlanPath,
 } from "../../features/boulder-state"
 import {
@@ -49,6 +50,36 @@ function hasRunningBackgroundTasks(sessionID: string, options?: AtlasHookOptions
   return backgroundManager
     ? backgroundManager.getTasksByParentSession(sessionID).some((task: { status: string }) => task.status === "running")
     : false
+}
+
+function buildPlanGraphStatusForContinuation(planPath: string): string | undefined {
+  const parsed = readPlanGraph(planPath)
+  if (!parsed) return undefined
+
+  const readyBatch = parsed.readyBatch.length > 0
+    ? parsed.readyBatch
+        .map((task) => `- ${task.id} - ${task.title}${task.category ? ` [${task.category}]` : ""} (wave ${task.wave})`)
+        .join("\n")
+    : "- none"
+  const blockedTasks = parsed.blockedTasks.length > 0
+    ? parsed.blockedTasks
+        .map((task) => `- ${task.id} - ${task.reason}${task.blockedBy.length > 0 ? ` (blocked by ${task.blockedBy.join(", ")})` : ""}`)
+        .join("\n")
+    : "- none"
+
+  return [
+    "## Plan Graph Status",
+    `Source: ${parsed.source}`,
+    `Progress: ${parsed.progress.completed}/${parsed.progress.total}`,
+    "",
+    "Ready batch:",
+    readyBatch,
+    "",
+    "Blocked tasks:",
+    blockedTasks,
+    "",
+    "Use `plan_graph_status` for full JSON. Use `plan_graph_seed_team_tasks` only when Team Mode is enabled; final-wave reviewers stay delegated through `task()`.",
+  ].join("\n")
 }
 
 async function injectContinuation(input: {
@@ -117,6 +148,7 @@ async function injectContinuation(input: {
       worktreePath: input.worktreePath,
       preferredTaskSessionId: preferredTaskSession?.session_id,
       preferredTaskTitle: preferredTaskSession?.task_title,
+      planGraphStatus: currentPlanPath ? buildPlanGraphStatusForContinuation(currentPlanPath) : undefined,
       backgroundManager: input.options?.backgroundManager,
       sessionState: input.sessionState,
       idleSettleMs: input.idleSettleMs,

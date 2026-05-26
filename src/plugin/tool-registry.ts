@@ -14,6 +14,7 @@ import {
   createTeamShutdownRequestTool,
 } from "../features/team-mode/tools/lifecycle"
 import { createTeamSendMessageTool } from "../features/team-mode/tools/messaging"
+import { createPlanGraphSeedTeamTasksTool } from "../features/team-mode/tools/plan-graph-seed"
 import { createTeamListTool, createTeamStatusTool } from "../features/team-mode/tools/query"
 import {
   createTeamTaskCreateTool,
@@ -41,6 +42,7 @@ import {
   createTaskList,
   createTaskUpdateTool,
   createHashlineEditTool,
+  createPlanGraphStatusTool,
 } from "../tools"
 import { getMainSessionID } from "../features/claude-code-session-state"
 import { filterDisabledTools } from "../shared/disabled-tools"
@@ -67,6 +69,8 @@ type ToolRegistryFactories = {
   createTaskList: typeof createTaskList
   createTaskUpdateTool: typeof createTaskUpdateTool
   createHashlineEditTool: typeof createHashlineEditTool
+  createPlanGraphStatusTool: typeof createPlanGraphStatusTool
+  createPlanGraphSeedTeamTasksTool: typeof createPlanGraphSeedTeamTasksTool
   createTeamApproveShutdownTool: typeof createTeamApproveShutdownTool
   createTeamCreateTool: typeof createTeamCreateTool
   createTeamDeleteTool: typeof createTeamDeleteTool
@@ -98,6 +102,8 @@ const defaultToolRegistryFactories: ToolRegistryFactories = {
   createTaskList,
   createTaskUpdateTool,
   createHashlineEditTool,
+  createPlanGraphStatusTool,
+  createPlanGraphSeedTeamTasksTool,
   createTeamApproveShutdownTool,
   createTeamCreateTool,
   createTeamDeleteTool,
@@ -327,6 +333,7 @@ export function createToolRegistry(args: {
         team_approve_shutdown: factories.createTeamApproveShutdownTool(pluginConfig.team_mode, ctx.client),
         team_reject_shutdown: factories.createTeamRejectShutdownTool(pluginConfig.team_mode, ctx.client),
         team_send_message: factories.createTeamSendMessageTool(pluginConfig.team_mode, ctx.client),
+        plan_graph_seed_team_tasks: factories.createPlanGraphSeedTeamTasksTool(pluginConfig.team_mode, ctx),
         team_task_create: factories.createTeamTaskCreateTool(pluginConfig.team_mode, ctx.client),
         team_task_list: factories.createTeamTaskListTool(pluginConfig.team_mode, ctx.client),
         team_task_update: factories.createTeamTaskUpdateTool(pluginConfig.team_mode, ctx.client),
@@ -344,6 +351,7 @@ export function createToolRegistry(args: {
     call_omo_agent: callOmoAgent,
     ...(lookAt ? { look_at: lookAt } : {}),
     task: delegateTask,
+    plan_graph_status: factories.createPlanGraphStatusTool(ctx),
     skill_mcp: skillMcpTool,
     skill: skillTool,
     ...(interactiveBashEnabled ? { interactive_bash: factories.interactive_bash } : {}),

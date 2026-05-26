@@ -39,4 +39,20 @@ describe("getPrometheusPrompt", () => {
       })
     })
   })
+
+  describe("#given any prompt variant", () => {
+    it("#then requires the machine-readable plan graph contract", () => {
+      const variants = [
+        getPrometheusPrompt(undefined, []),
+        getPrometheusPrompt("gpt-5.5", []),
+        getPrometheusPrompt("gemini-3.1-pro", []),
+      ]
+
+      for (const prompt of variants) {
+        expect(prompt).toContain("## Machine-Readable Plan Graph")
+        expect(prompt).toContain("graph/checklist alignment")
+        expect(prompt).toContain("final-wave:F1")
+      }
+    })
+  })
 })
