@@ -1,5 +1,6 @@
 export { BOULDER_DIR, BOULDER_FILE, BOULDER_STATE_PATH, NOTEPAD_BASE_PATH, NOTEPAD_DIR, PROMETHEUS_PLANS_DIR } from "./constants"
 export { readCurrentTopLevelTask } from "./top-level-task"
+export { parsePlanGraph, readPlanGraph, computePlanGraphSchedule, sortPlanGraphTasksTopologically, parseMarkdownPlanGraph } from "./plan-graph"
 export {
   addBoulderWork,
   appendSessionId,
@@ -40,3 +41,13 @@ export type {
   TaskSessionState,
   TopLevelTaskRef,
 } from "./types"
+export type {
+  PlanGraph,
+  PlanGraphBlockedTask,
+  PlanGraphParseResult,
+  PlanGraphProgress,
+  PlanGraphSource,
+  PlanGraphTask,
+  PlanGraphTaskSection,
+  PlanGraphTaskStatus,
+} from "./plan-graph"
