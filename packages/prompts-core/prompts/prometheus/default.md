@@ -188,6 +188,14 @@ Write(".omo/plans/{name}.md", content=`
 
 ---
 
+## Machine-Readable Plan Graph
+
+\`\`\`json
+{ "version": 1, "tasks": [] }
+\`\`\`
+
+---
+
 ## Final Verification Wave
 ...
 
@@ -201,12 +209,12 @@ Write(".omo/plans/{name}.md", content=`
 
 **Step 2 - Edit-append tasks in batches of 2-4:**
 
-Use Edit to insert each batch of tasks before the Final Verification section:
+Use Edit to insert each batch of tasks before the Machine-Readable Plan Graph section:
 
 ```
 Edit(".omo/plans/{name}.md",
-  oldString="---\n\n## Final Verification Wave",
-  newString="- [ ] 1. Task Title\n\n  **What to do**: ...\n  **QA Scenarios**: ...\n\n- [ ] 2. Task Title\n\n  **What to do**: ...\n  **QA Scenarios**: ...\n\n---\n\n## Final Verification Wave")
+  oldString="---\n\n## Machine-Readable Plan Graph",
+  newString="- [ ] 1. Task Title\n\n  **What to do**: ...\n  **QA Scenarios**: ...\n\n- [ ] 2. Task Title\n\n  **What to do**: ...\n  **QA Scenarios**: ...\n\n---\n\n## Machine-Readable Plan Graph")
 ```
 
 Repeat until all tasks are written. 2-4 tasks per Edit call balances speed and output limits.
@@ -818,7 +826,9 @@ task(
   6. Plan path is .omo/plans/, not docs/ or plans/.
   7. All TODO task labels use bare-number format ("1. xxx"), NOT "T1.", "Phase 1:", "Task-1." etc.
      All Final Wave labels use bare-number format with "F" prefix: "F1. xxx", "F2. xxx", NOT "T-F1.", "F-1.", "Final-1." etc.
-  Return: \`CHECK [N/7] PASS | VERDICT: GO/NO-GO\` plus, on NO-GO, file:line citations for each blocking issue.`
+  8. The plan contains `## Machine-Readable Plan Graph` with valid JSON.
+  9. The graph/checklist alignment is exact: every top-level TODO and Final Verification checkbox has one graph task with matching id, title, status, wave, category, references, QA evidence paths, and dependencies.
+  Return: \`CHECK [N/9] PASS | VERDICT: GO/NO-GO\` plus, on NO-GO, file:line citations for each blocking issue.`
 )
 ```
 
@@ -1455,6 +1465,52 @@ Max Concurrent: 7 (Waves 1 & 2)
   - Message: `type(scope): desc`
   - Files: `path/to/file`
   - Pre-commit: `test command`
+
+---
+
+## Machine-Readable Plan Graph
+
+> REQUIRED. This JSON is how Boulder, Atlas, and Team Mode schedule the Markdown plan. It must mirror every top-level checkbox in `## TODOs` and `## Final Verification Wave`.
+> Keep the Markdown as the human source of truth, but keep this block exact after every edit.
+> IDs use `todo:N` for implementation tasks and `final-wave:F1` etc. for final reviewers.
+> `status` mirrors the checkbox: `[ ]` = `pending`, `[x]` = `completed`, `[~]` = `blocked`.
+> `wave` is numeric; final-wave tasks must have a wave after every implementation wave.
+> `blockedBy` and `blocks` use graph IDs, not prose labels.
+> `category`, `skills`, `references`, `qaEvidencePaths`, and `promptSummary` are required scheduling hints for Atlas and Team Mode.
+
+\`\`\`json
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "todo:1",
+      "title": "Task Title",
+      "status": "pending",
+      "wave": 1,
+      "category": "quick",
+      "skills": ["test-driven-development"],
+      "blockedBy": [],
+      "blocks": ["todo:2"],
+      "references": ["src/path.ts:12"],
+      "qaEvidencePaths": [".omo/evidence/task-1-happy.txt"],
+      "promptSummary": "One-sentence executable summary for the worker."
+    },
+    {
+      "id": "final-wave:F1",
+      "title": "Plan Compliance Audit",
+      "status": "pending",
+      "wave": 99,
+      "category": "oracle",
+      "skills": [],
+      "blockedBy": ["todo:1"],
+      "blocks": [],
+      "references": [".omo/plans/{name}.md"],
+      "qaEvidencePaths": [".omo/evidence/final-qa/"],
+      "promptSummary": "Audit the finished work against the plan."
+    }
+  ]
+}
+\`\`\`
 
 ---
 
