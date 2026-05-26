@@ -197,6 +197,9 @@ export function parsePlanGraph(content: string, options: ParseOptions = {}): Pla
       tasks: normalizeEmbeddedTasks(parsed, warnings),
     }
     warnings.push(...compareGraphToMarkdown(graph, markdownGraph))
+    if (warnings.length > 0) {
+      return buildResult("markdown", markdownGraph, warnings)
+    }
     return buildResult("embedded", graph, warnings)
   } catch (error) {
     warnings.push(`Could not parse Machine-Readable Plan Graph JSON: ${error instanceof Error ? error.message : String(error)}`)

@@ -12,7 +12,7 @@ import {
   type PlanGraphTask,
 } from "../../boulder-state"
 import { loadRuntimeState } from "../team-state-store"
-import { createTask } from "../team-tasklist"
+import { createTask, listTasks } from "../team-tasklist"
 import type { RuntimeState, RuntimeStateMember, Task } from "../types"
 
 type PlanGraphSeedContext = Pick<PluginInput, "directory">
@@ -24,11 +24,13 @@ type PlanGraphSeedArgs = {
 
 type PlanGraphSeedDeps = {
   loadRuntimeState: typeof loadRuntimeState
+  listTasks: typeof listTasks
   createTask: typeof createTask
 }
 
 const defaultDeps: PlanGraphSeedDeps = {
   loadRuntimeState,
+  listTasks,
   createTask,
 }
 
@@ -76,6 +78,14 @@ function buildMetadata(planPath: string, task: PlanGraphTask): Record<string, un
   }
 }
 
+function getGraphTaskId(task: Task): string | null {
+  const planGraph = task.metadata?.planGraph
+  if (!planGraph || typeof planGraph !== "object" || Array.isArray(planGraph)) return null
+
+  const graphTaskId = (planGraph as Record<string, unknown>).graphTaskId
+  return typeof graphTaskId === "string" && graphTaskId.trim() ? graphTaskId : null
+}
+
 export function createPlanGraphSeedTeamTasksTool(
   config: TeamModeConfig,
   ctx: PlanGraphSeedContext,
@@ -115,13 +125,27 @@ export function createPlanGraphSeedTeamTasksTool(
       }
 
       const runtimeState = await deps.loadRuntimeState(args.teamRunId, config)
+      const existingTasks = await deps.listTasks(args.teamRunId, config)
+      const existingTaskByGraphId = new Map(
+        existingTasks
+          .map((task) => {
+            const graphTaskId = getGraphTaskId(task)
+            return graphTaskId ? ([graphTaskId, task] as const) : null
+          })
+          .filter((entry): entry is readonly [string, Task] => entry !== null),
+      )
       const leadName = findLead(runtimeState)?.name
+      const graphTasksById = new Map(parsed.graph.tasks.map((task) => [task.id, task]))
       const graphToTeamTaskId: Record<string, string> = {}
       const created: Array<{ graphTaskId: string; teamTaskId: string; owner?: string }> = []
       const skipped: Array<{ graphTaskId: string; reason: string }> = []
       const warnings = [...parsed.warnings]
 
       for (const graphTask of sortPlanGraphTasksTopologically(parsed.graph)) {
+        const existingTask = existingTaskByGraphId.get(graphTask.id)
+        if (existingTask) {
+          graphToTeamTaskId[graphTask.id] = existingTask.id
+        }
         if (graphTask.status === "completed") {
           skipped.push({ graphTaskId: graphTask.id, reason: "already-completed" })
           continue
@@ -130,8 +154,15 @@ export function createPlanGraphSeedTeamTasksTool(
           skipped.push({ graphTaskId: graphTask.id, reason: "final-wave-delegated-via-task" })
           continue
         }
+        if (existingTask) {
+          skipped.push({ graphTaskId: graphTask.id, reason: "already-seeded" })
+          continue
+        }
 
-        const missingMappedBlockers = graphTask.blockedBy.filter((graphTaskId) => !graphToTeamTaskId[graphTaskId])
+        const missingMappedBlockers = graphTask.blockedBy.filter((graphTaskId) => {
+          if (graphToTeamTaskId[graphTaskId]) return false
+          return graphTasksById.get(graphTaskId)?.status !== "completed"
+        })
         if (missingMappedBlockers.length > 0) {
           warnings.push(`Task ${graphTask.id} has blockers without seeded team task IDs: ${missingMappedBlockers.join(", ")}.`)
         }

@@ -45,6 +45,15 @@ const graphPlan = `# Plan
       "category": "deep",
       "blockedBy": ["todo:1"],
       "promptSummary": "Create Team Mode tasks from the graph."
+    },
+    {
+      "id": "final-wave:F1",
+      "title": "Oracle review",
+      "status": "pending",
+      "wave": 3,
+      "category": "oracle",
+      "blockedBy": ["todo:2", "todo:3"],
+      "promptSummary": "Review the finished work."
     }
   ]
 }
@@ -60,7 +69,7 @@ describe("parsePlanGraph", () => {
     const result = parsePlanGraph(graphPlan, { planPath: ".omo/plans/graph.md" })
 
     expect(result.source).toBe("embedded")
-    expect(result.graph.tasks).toHaveLength(3)
+    expect(result.graph.tasks).toHaveLength(4)
     expect(result.graph.tasks[0]).toMatchObject({
       id: "todo:1",
       title: "Build parser",
@@ -112,7 +121,8 @@ describe("parsePlanGraph", () => {
 \`\`\`
 `, { planPath: ".omo/plans/mismatch.md" })
 
-    expect(result.source).toBe("embedded")
+    expect(result.source).toBe("markdown")
+    expect(result.readyBatch.map((task) => task.id)).toEqual(["todo:1"])
     expect(result.warnings).toContain("Graph is missing Markdown task todo:2.")
     expect(result.warnings).toContain('Graph task todo:1 title "Wrong title" does not match Markdown title "First task".')
   })
@@ -121,7 +131,13 @@ describe("parsePlanGraph", () => {
     const result = parsePlanGraph(graphPlan, { planPath: ".omo/plans/graph.md" })
 
     expect(result.readyBatch.map((task) => task.id)).toEqual(["todo:2", "todo:3"])
-    expect(result.blockedTasks).toEqual([])
+    expect(result.blockedTasks).toEqual([
+      {
+        id: "final-wave:F1",
+        reason: "waiting-for-dependencies",
+        blockedBy: ["todo:2", "todo:3"],
+      },
+    ])
   })
 
   test("#given incomplete implementation tasks #when final wave is present #then final tasks stay blocked", () => {
